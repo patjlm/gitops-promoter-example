@@ -1,0 +1,7 @@
+{
+  "drySha": "f35feaee756b6c76743a71d360b761815e2bb2fe",
+  "repoURL": "https://github.com/patjlm/gitops-promoter-example",
+  "author": "patmarti@redhat.com",
+  "date": "2026-05-06T18:41:47+02:00",
+  "subject": "Fix proposed branch naming: use <branch>-next/<activePath>"
+}
