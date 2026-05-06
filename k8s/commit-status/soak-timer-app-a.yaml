@@ -6,5 +6,6 @@ metadata:
 spec:
   promotionStrategyRef:
     name: app-a
-  key: soak-timer
-  duration: 2m
+  environments:
+    - branch: environment/stage
+      duration: 2m
