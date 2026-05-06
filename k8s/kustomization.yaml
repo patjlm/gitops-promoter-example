@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - scm-provider.yaml
+  - git-repository.yaml
+  - promotion-strategies/app-a.yaml
+  - promotion-strategies/app-b.yaml
+  - promotion-strategies/app-c.yaml
+  - promotion-strategies/app-d.yaml
+  - promotion-strategies/infra-e.yaml
+  - commit-status/ci-check-app-a.yaml
+  - commit-status/ci-check-app-b.yaml
+  - commit-status/ci-check-app-c.yaml
+  - commit-status/ci-check-app-d.yaml
+  - commit-status/ci-check-infra-e.yaml
+  - commit-status/soak-timer-app-a.yaml
+  - commit-status/soak-timer-app-b.yaml
+  - commit-status/soak-timer-app-c.yaml
+  - commit-status/soak-timer-app-d.yaml
+  - commit-status/soak-timer-infra-e.yaml

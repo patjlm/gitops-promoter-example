@@ -1,0 +1,13 @@
+replicaCount: 3
+
+config:
+  maxmemory: "512mb"
+  save: "30 100"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

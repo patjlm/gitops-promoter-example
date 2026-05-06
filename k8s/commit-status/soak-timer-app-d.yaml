@@ -1,0 +1,10 @@
+apiVersion: promoter.argoproj.io/v1alpha1
+kind: TimedCommitStatus
+metadata:
+  name: soak-timer-app-d
+  namespace: promoter-system
+spec:
+  promotionStrategyRef:
+    name: app-d
+  key: soak-timer
+  duration: 30m

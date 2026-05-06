@@ -1,0 +1,11 @@
+apiVersion: promoter.argoproj.io/v1alpha1
+kind: GitRepository
+metadata:
+  name: gitops-promoter-example
+  namespace: promoter-system
+spec:
+  github:
+    owner: <REPLACE-WITH-GITHUB-ORG-OR-USER>
+    name: gitops-promoter-example
+  scmProviderRef:
+    name: github

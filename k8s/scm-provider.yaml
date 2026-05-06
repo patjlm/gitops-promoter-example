@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-app-key
+  namespace: promoter-system
+type: Opaque
+stringData:
+  githubAppPrivateKey: <REPLACE-WITH-YOUR-GITHUB-APP-PRIVATE-KEY>
+---
+apiVersion: promoter.argoproj.io/v1alpha1
+kind: ScmProvider
+metadata:
+  name: github
+  namespace: promoter-system
+spec:
+  secretRef:
+    name: github-app-key
+  github:
+    appID: 0       # REPLACE with your GitHub App ID
+    installationID: 0  # REPLACE with your GitHub App Installation ID

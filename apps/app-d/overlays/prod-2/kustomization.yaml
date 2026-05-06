@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: app-d-prod-2
+
+patches:
+  - target:
+      kind: CronJob
+      name: app-d-batch
+    patch: |
+      - op: replace
+        path: /spec/schedule
+        value: "0 2 * * *"
+      - op: replace
+        path: /spec/jobTemplate/spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: 250m
+            memory: 128Mi
+          limits:
+            cpu: "1"
+            memory: 512Mi
+  - target:
+      kind: ConfigMap
+      name: app-d-config
+    patch: |
+      - op: replace
+        path: /data/ENVIRONMENT
+        value: "prod-2"
+      - op: replace
+        path: /data/BATCH_SIZE
+        value: "500"
+      - op: replace
+        path: /data/LOG_LEVEL
+        value: "error"

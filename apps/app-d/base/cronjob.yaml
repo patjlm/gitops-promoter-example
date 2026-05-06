@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: app-d-batch
+spec:
+  schedule: "0 */6 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: batch
+              image: busybox:1.36
+              command:
+                - /bin/sh
+                - -c
+                - "echo Processing batch for $ENVIRONMENT at $(date) && sleep 10"
+              envFrom:
+                - configMapRef:
+                    name: app-d-config
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+          restartPolicy: OnFailure

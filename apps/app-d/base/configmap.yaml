@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-d-config
+data:
+  ENVIRONMENT: "default"
+  BATCH_SIZE: "100"
+  LOG_LEVEL: "info"

@@ -1,0 +1,24 @@
+apiVersion: promoter.argoproj.io/v1alpha1
+kind: PromotionStrategy
+metadata:
+  name: app-a
+  namespace: promoter-system
+spec:
+  gitRepositoryRef:
+    name: gitops-promoter-example
+  activePath: apps/app-a
+  activeCommitStatuses:
+    - key: ci-check
+  environments:
+    - branch: environment/development
+    - branch: environment/integration
+    - branch: environment/stage
+      activeCommitStatuses:
+        - key: ci-check
+        - key: soak-timer
+    - branch: environment/prod-1
+      autoMerge: false
+    - branch: environment/prod-2
+      autoMerge: false
+    - branch: environment/prod-3
+      autoMerge: false

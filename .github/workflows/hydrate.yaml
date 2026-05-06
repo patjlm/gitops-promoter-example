@@ -1,0 +1,265 @@
+name: Hydrate Components
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+env:
+  ENVIRONMENTS: "development integration stage prod-1 prod-2 prod-3"
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      app-a: ${{ steps.changes.outputs.app-a }}
+      app-b: ${{ steps.changes.outputs.app-b }}
+      app-c: ${{ steps.changes.outputs.app-c }}
+      app-d: ${{ steps.changes.outputs.app-d }}
+      infra-e: ${{ steps.changes.outputs.infra-e }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: changes
+        run: |
+          changed=$(git diff --name-only HEAD~1 HEAD)
+          for component in app-a app-b app-c app-d; do
+            if echo "$changed" | grep -q "^apps/$component/"; then
+              echo "$component=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "$component=false" >> "$GITHUB_OUTPUT"
+            fi
+          done
+          if echo "$changed" | grep -q "^infra/infra-e/"; then
+            echo "infra-e=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "infra-e=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  hydrate-helm:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.app-a == 'true' || needs.detect-changes.outputs.app-c == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component:
+          - app-a
+          - app-c
+        exclude:
+          - component: ${{ needs.detect-changes.outputs.app-a != 'true' && 'app-a' || 'NONE' }}
+          - component: ${{ needs.detect-changes.outputs.app-c != 'true' && 'app-c' || 'NONE' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Hydrate all environments
+        run: |
+          DRY_SHA=$(git rev-parse HEAD)
+          AUTHOR=$(git log -1 --format='%ae')
+          SUBJECT=$(git log -1 --format='%s')
+          DATE=$(git log -1 --format='%aI')
+
+          for ENV in $ENVIRONMENTS; do
+            ACTIVE_BRANCH="environment/$ENV"
+            PROPOSED_BRANCH="$ACTIVE_BRANCH/apps/${{ matrix.component }}-next"
+            ACTIVE_PATH="apps/${{ matrix.component }}"
+            OUTPUT_DIR=$(mktemp -d)
+
+            helm template ${{ matrix.component }} "apps/${{ matrix.component }}" \
+              -f "apps/${{ matrix.component }}/values.yaml" \
+              -f "apps/${{ matrix.component }}/values-${ENV}.yaml" \
+              --output-dir "$OUTPUT_DIR"
+
+            HYDRATED_DIR="$OUTPUT_DIR/${{ matrix.component }}/templates"
+
+            # Write hydrator.metadata
+            cat > "$OUTPUT_DIR/hydrator.metadata" <<EOF
+          {
+            "drySha": "$DRY_SHA",
+            "repoURL": "${{ github.server_url }}/${{ github.repository }}",
+            "author": "$AUTHOR",
+            "date": "$DATE",
+            "subject": "$SUBJECT"
+          }
+          EOF
+
+            # Check if proposed branch exists
+            if git ls-remote --exit-code origin "$PROPOSED_BRANCH" > /dev/null 2>&1; then
+              git fetch origin "$PROPOSED_BRANCH"
+              git checkout "$PROPOSED_BRANCH"
+            else
+              # Create orphan branch if it doesn't exist
+              git checkout --orphan "$PROPOSED_BRANCH"
+              git rm -rf . > /dev/null 2>&1 || true
+            fi
+
+            # Clear activePath directory and copy hydrated content
+            rm -rf "$ACTIVE_PATH"
+            mkdir -p "$ACTIVE_PATH"
+            cp "$OUTPUT_DIR/hydrator.metadata" "$ACTIVE_PATH/hydrator.metadata"
+            cp "$HYDRATED_DIR"/* "$ACTIVE_PATH/"
+
+            # Check for changes (dedup)
+            git add "$ACTIVE_PATH"
+            if git diff --cached --quiet; then
+              echo "No changes for ${{ matrix.component }} in $ENV, skipping"
+              git checkout main
+              continue
+            fi
+
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "hydrate ${{ matrix.component }} for $ENV from $DRY_SHA"
+            git push origin "$PROPOSED_BRANCH"
+            git checkout main
+
+            rm -rf "$OUTPUT_DIR"
+          done
+
+  hydrate-kustomize:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.app-b == 'true' || needs.detect-changes.outputs.app-d == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component:
+          - app-b
+          - app-d
+        exclude:
+          - component: ${{ needs.detect-changes.outputs.app-b != 'true' && 'app-b' || 'NONE' }}
+          - component: ${{ needs.detect-changes.outputs.app-d != 'true' && 'app-d' || 'NONE' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Hydrate all environments
+        run: |
+          DRY_SHA=$(git rev-parse HEAD)
+          AUTHOR=$(git log -1 --format='%ae')
+          SUBJECT=$(git log -1 --format='%s')
+          DATE=$(git log -1 --format='%aI')
+
+          for ENV in $ENVIRONMENTS; do
+            ACTIVE_BRANCH="environment/$ENV"
+            PROPOSED_BRANCH="$ACTIVE_BRANCH/apps/${{ matrix.component }}-next"
+            ACTIVE_PATH="apps/${{ matrix.component }}"
+            OUTPUT_DIR=$(mktemp -d)
+
+            kustomize build "apps/${{ matrix.component }}/overlays/$ENV" -o "$OUTPUT_DIR/"
+
+            cat > "$OUTPUT_DIR/hydrator.metadata" <<EOF
+          {
+            "drySha": "$DRY_SHA",
+            "repoURL": "${{ github.server_url }}/${{ github.repository }}",
+            "author": "$AUTHOR",
+            "date": "$DATE",
+            "subject": "$SUBJECT"
+          }
+          EOF
+
+            if git ls-remote --exit-code origin "$PROPOSED_BRANCH" > /dev/null 2>&1; then
+              git fetch origin "$PROPOSED_BRANCH"
+              git checkout "$PROPOSED_BRANCH"
+            else
+              git checkout --orphan "$PROPOSED_BRANCH"
+              git rm -rf . > /dev/null 2>&1 || true
+            fi
+
+            rm -rf "$ACTIVE_PATH"
+            mkdir -p "$ACTIVE_PATH"
+            cp "$OUTPUT_DIR/hydrator.metadata" "$ACTIVE_PATH/hydrator.metadata"
+            cp "$OUTPUT_DIR"/*.yaml "$ACTIVE_PATH/" 2>/dev/null || true
+            cp "$OUTPUT_DIR"/*.yml "$ACTIVE_PATH/" 2>/dev/null || true
+
+            git add "$ACTIVE_PATH"
+            if git diff --cached --quiet; then
+              echo "No changes for ${{ matrix.component }} in $ENV, skipping"
+              git checkout main
+              continue
+            fi
+
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "hydrate ${{ matrix.component }} for $ENV from $DRY_SHA"
+            git push origin "$PROPOSED_BRANCH"
+            git checkout main
+
+            rm -rf "$OUTPUT_DIR"
+          done
+
+  hydrate-terraform:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.infra-e == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Hydrate all environments
+        run: |
+          DRY_SHA=$(git rev-parse HEAD)
+          AUTHOR=$(git log -1 --format='%ae')
+          SUBJECT=$(git log -1 --format='%s')
+          DATE=$(git log -1 --format='%aI')
+
+          for ENV in $ENVIRONMENTS; do
+            ACTIVE_BRANCH="environment/$ENV"
+            PROPOSED_BRANCH="$ACTIVE_BRANCH/infra/infra-e-next"
+            ACTIVE_PATH="infra/infra-e"
+            OUTPUT_DIR=$(mktemp -d)
+
+            # Copy terraform files and select the right tfvars
+            cp infra/infra-e/main.tf "$OUTPUT_DIR/"
+            cp infra/infra-e/variables.tf "$OUTPUT_DIR/"
+            cp infra/infra-e/outputs.tf "$OUTPUT_DIR/"
+            cp "infra/infra-e/envs/${ENV}.tfvars" "$OUTPUT_DIR/terraform.tfvars"
+
+            cat > "$OUTPUT_DIR/hydrator.metadata" <<EOF
+          {
+            "drySha": "$DRY_SHA",
+            "repoURL": "${{ github.server_url }}/${{ github.repository }}",
+            "author": "$AUTHOR",
+            "date": "$DATE",
+            "subject": "$SUBJECT"
+          }
+          EOF
+
+            if git ls-remote --exit-code origin "$PROPOSED_BRANCH" > /dev/null 2>&1; then
+              git fetch origin "$PROPOSED_BRANCH"
+              git checkout "$PROPOSED_BRANCH"
+            else
+              git checkout --orphan "$PROPOSED_BRANCH"
+              git rm -rf . > /dev/null 2>&1 || true
+            fi
+
+            rm -rf "$ACTIVE_PATH"
+            mkdir -p "$ACTIVE_PATH"
+            cp "$OUTPUT_DIR"/* "$ACTIVE_PATH/"
+
+            git add "$ACTIVE_PATH"
+            if git diff --cached --quiet; then
+              echo "No changes for infra-e in $ENV, skipping"
+              git checkout main
+              continue
+            fi
+
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "hydrate infra-e for $ENV from $DRY_SHA"
+            git push origin "$PROPOSED_BRANCH"
+            git checkout main
+
+            rm -rf "$OUTPUT_DIR"
+          done

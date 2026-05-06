@@ -1,0 +1,29 @@
+apiVersion: promoter.argoproj.io/v1alpha1
+kind: WebRequestCommitStatus
+metadata:
+  name: ci-check-app-c
+  namespace: promoter-system
+spec:
+  promotionStrategyRef:
+    name: app-c
+  key: ci-check
+  descriptionTemplate: >-
+    {{ if eq .Phase "success" }}CI checks passed{{ else }}Waiting for CI checks{{ end }}
+  urlTemplate: ""
+  reportOn: active
+  httpRequest:
+    urlTemplate: >-
+      https://api.github.com/repos/<OWNER>/<REPO>/commits/{{ .Sha }}/status
+    method: GET
+    headerTemplates:
+      Accept: application/vnd.github+json
+    timeout: 10s
+    authentication:
+      scm: {}
+  success:
+    when:
+      expression: 'Response != nil ? Response.Body.state == "success" : Phase == "success"'
+  mode:
+    context: environments
+    polling:
+      interval: 1m
