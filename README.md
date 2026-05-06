@@ -19,7 +19,7 @@ Test bed for [discussion #1385](https://github.com/argoproj-labs/gitops-promoter
     └─────────┴───────┴───────┴─────────┘
                       |
               Proposed branches:
-        environment/<env>/<activePath>-next
+        environment/<env>-next/<activePath>
                       |
               gitops-promoter
          (opens PRs, gates on CI + deploy)
@@ -110,9 +110,9 @@ For each component, a `PromotionStrategy` with `activePath`:
 - `environment/prod-1`, `environment/prod-2`, `environment/prod-3`
 
 **Per-component proposed branches** (created by hydrator):
-- `environment/development/apps/app-a-next`
-- `environment/development/apps/app-b-next`
-- `environment/development/infra/infra-e-next`
+- `environment/development-next/apps/app-a`
+- `environment/development-next/apps/app-b`
+- `environment/development-next/infra/infra-e`
 - ... (6 envs x 5 components = 30 proposed branches)
 
 ## Setup

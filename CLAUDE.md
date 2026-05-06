@@ -61,7 +61,7 @@ The promoter also injects a synthetic `proposedCommitStatus` on each non-first e
 
 - `main` — DRY source branch (users edit here)
 - `environment/<env>` — active branches (shared across components)
-- `environment/<env>/<activePath>-next` — proposed branches (per component)
+- `environment/<env>-next/<activePath>` — proposed branches (per component)
 
 ## Key Design Decisions
 

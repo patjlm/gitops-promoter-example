@@ -30,7 +30,7 @@ jobs:
             # Hydrate if source changed OR if the first proposed branch doesn't exist yet
             if echo "$changed" | grep -q "^apps/$component/"; then
               echo "$component=true" >> "$GITHUB_OUTPUT"
-            elif ! git ls-remote --exit-code origin "environment/development/apps/$component-next" > /dev/null 2>&1; then
+            elif ! git ls-remote --exit-code origin "environment/development-next/apps/$component" > /dev/null 2>&1; then
               echo "No proposed branch for $component yet, will hydrate"
               echo "$component=true" >> "$GITHUB_OUTPUT"
             else
@@ -39,7 +39,7 @@ jobs:
           done
           if echo "$changed" | grep -q "^infra/infra-e/"; then
             echo "infra-e=true" >> "$GITHUB_OUTPUT"
-          elif ! git ls-remote --exit-code origin "environment/development/infra/infra-e-next" > /dev/null 2>&1; then
+          elif ! git ls-remote --exit-code origin "environment/development-next/infra/infra-e" > /dev/null 2>&1; then
             echo "No proposed branch for infra-e yet, will hydrate"
             echo "infra-e=true" >> "$GITHUB_OUTPUT"
           else
@@ -75,7 +75,7 @@ jobs:
 
           for ENV in $ENVIRONMENTS; do
             ACTIVE_BRANCH="environment/$ENV"
-            PROPOSED_BRANCH="$ACTIVE_BRANCH/apps/${{ matrix.component }}-next"
+            PROPOSED_BRANCH="${ACTIVE_BRANCH}-next/apps/${{ matrix.component }}"
             ACTIVE_PATH="apps/${{ matrix.component }}"
             OUTPUT_DIR=$(mktemp -d)
 
@@ -159,7 +159,7 @@ jobs:
 
           for ENV in $ENVIRONMENTS; do
             ACTIVE_BRANCH="environment/$ENV"
-            PROPOSED_BRANCH="$ACTIVE_BRANCH/apps/${{ matrix.component }}-next"
+            PROPOSED_BRANCH="${ACTIVE_BRANCH}-next/apps/${{ matrix.component }}"
             ACTIVE_PATH="apps/${{ matrix.component }}"
             OUTPUT_DIR=$(mktemp -d)
 
@@ -223,7 +223,7 @@ jobs:
 
           for ENV in $ENVIRONMENTS; do
             ACTIVE_BRANCH="environment/$ENV"
-            PROPOSED_BRANCH="$ACTIVE_BRANCH/infra/infra-e-next"
+            PROPOSED_BRANCH="${ACTIVE_BRANCH}-next/infra/infra-e"
             ACTIVE_PATH="infra/infra-e"
             OUTPUT_DIR=$(mktemp -d)
 
