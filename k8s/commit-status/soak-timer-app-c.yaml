@@ -7,4 +7,4 @@ spec:
   promotionStrategyRef:
     name: app-c
   key: soak-timer
-  duration: 30m
+  duration: 2m

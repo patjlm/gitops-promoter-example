@@ -14,6 +14,11 @@ resources:
   - commit-status/ci-check-app-c.yaml
   - commit-status/ci-check-app-d.yaml
   - commit-status/ci-check-infra-e.yaml
+  - commit-status/deploy-app-a.yaml
+  - commit-status/deploy-app-b.yaml
+  - commit-status/deploy-app-c.yaml
+  - commit-status/deploy-app-d.yaml
+  - commit-status/deploy-infra-e.yaml
   - commit-status/soak-timer-app-a.yaml
   - commit-status/soak-timer-app-b.yaml
   - commit-status/soak-timer-app-c.yaml

@@ -1,0 +1,32 @@
+apiVersion: promoter.argoproj.io/v1alpha1
+kind: WebRequestCommitStatus
+metadata:
+  name: deploy-app-b
+  namespace: promoter-system
+spec:
+  promotionStrategyRef:
+    name: app-b
+  key: deploy
+  descriptionTemplate: >-
+    {{ if eq .Phase "success" }}Deployment succeeded{{ else }}Waiting for deployment{{ end }}
+  urlTemplate: ""
+  reportOn: active
+  httpRequest:
+    urlTemplate: >-
+      https://api.github.com/repos/patjlm/gitops-promoter-example/commits/{{ .Sha }}/status
+    method: GET
+    headerTemplates:
+      Accept: application/vnd.github+json
+    timeout: 10s
+    authentication:
+      scm: {}
+  success:
+    when:
+      expression: >-
+        Response != nil && Response.Body.statuses != nil ?
+          any(Response.Body.statuses, {.context == "deploy" && .state == "success"})
+          : Phase == "success"
+  mode:
+    context: environments
+    polling:
+      interval: 1m

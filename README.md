@@ -2,7 +2,7 @@
 
 Example repository demonstrating [gitops-promoter](https://github.com/argoproj-labs/gitops-promoter)'s **activePath monorepo mode** ([PR #1337](https://github.com/argoproj-labs/gitops-promoter/pull/1337)) for independent promotion of multiple components through a shared set of environment branches.
 
-This repo serves as a test bed for [discussion #1385](https://github.com/argoproj-labs/gitops-promoter/discussions/1385).
+Test bed for [discussion #1385](https://github.com/argoproj-labs/gitops-promoter/discussions/1385).
 
 ## Architecture
 
@@ -22,7 +22,7 @@ This repo serves as a test bed for [discussion #1385](https://github.com/argopro
         environment/<env>/<activePath>-next
                       |
               gitops-promoter
-          (opens PRs, gates on CI checks)
+         (opens PRs, gates on CI + deploy)
                       |
               Active branches:
             environment/<env>
@@ -35,9 +35,9 @@ development → integration → stage → prod-1 → prod-2 → prod-3
   (auto)        (auto)      (auto)  (manual)  (manual)  (manual)
 ```
 
-- **development → stage**: auto-merge when CI checks pass
-- **stage → prod-1**: requires 30-minute soak time (`TimedCommitStatus`)
-- **prod-***: manual PR approval required (`autoMerge: false`)
+- **development → stage**: auto-merge when CI checks and deploy status pass
+- **stage → prod-1**: additionally requires 2-minute soak time (`TimedCommitStatus`)
+- **prod-\***: manual PR approval required (`autoMerge: false`)
 
 ### Components
 
@@ -73,21 +73,40 @@ On push to `main`, the [hydrate workflow](.github/workflows/hydrate.yaml):
 For each component, a `PromotionStrategy` with `activePath`:
 - Watches proposed branches for new hydrated commits
 - Opens PRs from proposed → active branches
-- Gates merges on `WebRequestCommitStatus` (polls GitHub commit status API)
+- Gates merges on commit status checks
 - Chains environments: a commit must be healthy in dev before promoting to integration, etc.
 
-### 4. Gating (CI + WebRequestCommitStatus)
+### 4. Gating
 
-The [ci-checks workflow](.github/workflows/ci-checks.yaml) runs on pushes to `environment/**` branches, validating manifests. `WebRequestCommitStatus` polls GitHub's commit status API to detect when CI jobs pass, automatically creating the `CommitStatus` CRs that gate promotion.
+| Gate | Type | Trigger | What it checks |
+|------|------|---------|----------------|
+| `ci-check` | `WebRequestCommitStatus` | Polls GitHub API | Combined commit status on active branch |
+| `deploy` | `WebRequestCommitStatus` | Polls GitHub API | `context=deploy` status set by the fake deploy workflow |
+| `timer` | `TimedCommitStatus` | Time-based | 2-minute soak time (only on `environment/stage`) |
 
-No ArgoCD dependency. No external systems creating CommitStatus CRs via kubectl.
+**CI checks** ([ci-checks.yaml](.github/workflows/ci-checks.yaml)): runs on PRs targeting active branches and on post-merge pushes. Validates K8s manifests or runs `terraform validate`.
+
+**Fake deploy** ([deploy.yaml](.github/workflows/deploy.yaml)): runs on post-merge pushes to active branches. Simulates a deployment and sets a `deploy` GitHub commit status on the commit.
+
+**No ArgoCD dependency.** No external systems creating CommitStatus CRs via kubectl. gitops-promoter reads CI/deploy job results directly from GitHub.
+
+### 5. End-to-End Flow
+
+1. User pushes a change to `main`
+2. Hydrate workflow renders per-env content, pushes to `-next` branches
+3. Promoter opens PRs from `-next` → active branches
+4. CI checks run on the PR
+5. Promoter merges the PR (if `autoMerge: true`)
+6. Deploy workflow runs post-merge, sets `deploy` commit status
+7. WebRequestCommitStatus polls GitHub API, picks up `ci-check` and `deploy` as success
+8. Promoter chains to the next environment (repeats from step 3)
+9. At stage: TimedCommitStatus enforces 2-minute soak
+10. At prod-\*: PR opened but requires human approval
 
 ## Branch Layout
 
 **Shared active branches** (one per environment):
-- `environment/development`
-- `environment/integration`
-- `environment/stage`
+- `environment/development`, `environment/integration`, `environment/stage`
 - `environment/prod-1`, `environment/prod-2`, `environment/prod-3`
 
 **Per-component proposed branches** (created by hydrator):
@@ -98,46 +117,19 @@ No ArgoCD dependency. No external systems creating CommitStatus CRs via kubectl.
 
 ## Setup
 
+See [setup/README.md](setup/README.md) for local development with minikube.
+
 ### Prerequisites
 
 - A Kubernetes cluster with gitops-promoter installed (with activePath support from PR #1337)
-- A GitHub App with permissions: Checks (R/W), Contents (R/W), Pull requests (R/W)
+- A GitHub App with permissions: Checks (R/W), Contents (R/W), Pull requests (R/W), Commit statuses (R/W)
 
-### 1. Configure the GitHub App
-
-Edit `k8s/scm-provider.yaml`:
-- Set `appID` and `installationID`
-- Replace the Secret's `githubAppPrivateKey` with your actual key
-
-### 2. Configure the repository
-
-Edit `k8s/git-repository.yaml`:
-- Set `owner` to your GitHub org/user
-
-Edit all files in `k8s/commit-status/ci-check-*.yaml`:
-- Replace `<OWNER>/<REPO>` in `httpRequest.urlTemplate` with your actual values
-
-### 3. Apply CRDs
+### Quick Start
 
 ```bash
-kubectl apply -k k8s/
+cp setup/config.env setup/config.local.env   # edit with GitHub App creds
+./setup/setup.sh                              # bootstraps minikube + promoter
 ```
-
-### 4. Create environment branches
-
-```bash
-for env in development integration stage prod-1 prod-2 prod-3; do
-  git checkout --orphan "environment/$env"
-  git rm -rf . 2>/dev/null || true
-  git commit --allow-empty -m "initialize environment/$env"
-  git push origin "environment/$env"
-  git checkout main
-done
-```
-
-### 5. Push to main
-
-Any push to `main` that modifies a component will trigger hydration and start the promotion pipeline.
 
 ## Repository Structure
 
@@ -156,9 +148,13 @@ Any push to `main` that modifies a component will trigger hydration and start th
 │   ├── promotion-strategies/
 │   ├── commit-status/
 │   └── kustomization.yaml
+├── setup/              # Local dev scripts
+├── gitops-promoter/    # Submodule (PR #1337)
 ├── .github/workflows/
 │   ├── hydrate.yaml    # Custom hydrator
-│   └── ci-checks.yaml  # CI validation
+│   ├── ci-checks.yaml  # CI validation
+│   └── deploy.yaml     # Fake deploy + status
+├── CLAUDE.md
 └── README.md
 ```
 

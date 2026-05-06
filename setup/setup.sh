@@ -88,12 +88,20 @@ else
     echo ""
     echo "Found setup/install.yaml, applying..."
     kubectl apply -f "${SCRIPT_DIR}/install.yaml"
+    # Retry to handle CRD registration race condition
+    sleep 3
+    kubectl apply -f "${SCRIPT_DIR}/install.yaml" 2>/dev/null || true
     kubectl -n promoter-system set image deployment/promoter-controller-manager \
       manager="${PROMOTER_IMAGE}:${PROMOTER_TAG}"
   else
     exit 1
   fi
 fi
+
+# Install ArgoCD CRDs (the promoter controller watches Application resources)
+echo "Installing ArgoCD CRDs..."
+kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/crds/application-crd.yaml 2>/dev/null
+kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/crds/appproject-crd.yaml 2>/dev/null
 
 echo "Waiting for promoter controller to be ready..."
 kubectl -n promoter-system rollout status deployment/promoter-controller-manager --timeout=120s

@@ -1,9 +1,22 @@
 name: CI Checks
 
 on:
+  pull_request:
+    branches:
+      - environment/development
+      - environment/integration
+      - environment/stage
+      - environment/prod-1
+      - environment/prod-2
+      - environment/prod-3
   push:
     branches:
-      - environment/**
+      - environment/development
+      - environment/integration
+      - environment/stage
+      - environment/prod-1
+      - environment/prod-2
+      - environment/prod-3
 
 jobs:
   validate:
@@ -11,14 +24,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Detect component from branch
+      - name: Detect component
         id: detect
         run: |
           BRANCH="${GITHUB_REF#refs/heads/}"
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            BRANCH="${GITHUB_BASE_REF}"
+          fi
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
 
-          # Determine which component changed by looking at modified files
-          changed=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+          changed=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git ls-tree -r --name-only HEAD)
           if echo "$changed" | grep -q "^apps/app-a/"; then
             echo "component=app-a" >> "$GITHUB_OUTPUT"
             echo "type=k8s" >> "$GITHUB_OUTPUT"
@@ -51,7 +66,7 @@ jobs:
             kubectl apply --dry-run=client -f "$f" 2>&1 || true
           done
 
-      - name: Validate Terraform
+      - name: Setup Terraform
         if: steps.detect.outputs.type == 'terraform'
         uses: hashicorp/setup-terraform@v3
         with:
@@ -67,6 +82,7 @@ jobs:
       - name: Summary
         run: |
           echo "## CI Check Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Event:** ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Branch:** ${{ steps.detect.outputs.branch }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Component:** ${{ steps.detect.outputs.component }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Type:** ${{ steps.detect.outputs.type }}" >> "$GITHUB_STEP_SUMMARY"
