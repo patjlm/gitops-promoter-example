@@ -13,7 +13,7 @@ spec:
   reportOn: active
   httpRequest:
     urlTemplate: >-
-      https://api.github.com/repos/<OWNER>/<REPO>/commits/{{ .Sha }}/status
+      https://api.github.com/repos/patjlm/gitops-promoter-example/commits/{{ .Sha }}/status
     method: GET
     headerTemplates:
       Accept: application/vnd.github+json

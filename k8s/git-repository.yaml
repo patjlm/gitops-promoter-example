@@ -5,7 +5,7 @@ metadata:
   namespace: promoter-system
 spec:
   github:
-    owner: <REPLACE-WITH-GITHUB-ORG-OR-USER>
+    owner: patjlm
     name: gitops-promoter-example
   scmProviderRef:
     name: github
