@@ -6,3 +6,6 @@
 .idea/
 .vscode/
 .mcp.json
+setup/config.local.env
+setup/install.yaml
+setup/.build/
