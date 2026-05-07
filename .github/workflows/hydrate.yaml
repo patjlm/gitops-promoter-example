@@ -26,9 +26,15 @@ jobs:
       - id: changes
         run: |
           changed=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+          # If workflow files changed, re-hydrate everything so they propagate to env branches
+          WORKFLOW_CHANGED=false
+          if echo "$changed" | grep -q "^\.github/workflows/"; then
+            WORKFLOW_CHANGED=true
+          fi
           for component in app-a app-b app-c app-d; do
-            # Hydrate if source changed OR if the first proposed branch doesn't exist yet
-            if echo "$changed" | grep -q "^apps/$component/"; then
+            if [ "$WORKFLOW_CHANGED" = "true" ]; then
+              echo "$component=true" >> "$GITHUB_OUTPUT"
+            elif echo "$changed" | grep -q "^apps/$component/"; then
               echo "$component=true" >> "$GITHUB_OUTPUT"
             elif ! git ls-remote --exit-code origin "environment/development-next/apps/$component" > /dev/null 2>&1; then
               echo "No proposed branch for $component yet, will hydrate"
@@ -37,7 +43,9 @@ jobs:
               echo "$component=false" >> "$GITHUB_OUTPUT"
             fi
           done
-          if echo "$changed" | grep -q "^infra/infra-e/"; then
+          if [ "$WORKFLOW_CHANGED" = "true" ]; then
+            echo "infra-e=true" >> "$GITHUB_OUTPUT"
+          elif echo "$changed" | grep -q "^infra/infra-e/"; then
             echo "infra-e=true" >> "$GITHUB_OUTPUT"
           elif ! git ls-remote --exit-code origin "environment/development-next/infra/infra-e" > /dev/null 2>&1; then
             echo "No proposed branch for infra-e yet, will hydrate"
