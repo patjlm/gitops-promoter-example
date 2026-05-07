@@ -65,3 +65,41 @@ kubectl apply -f install.yaml
 ```
 
 **Suggestion**: Split CRDs into a separate manifest, or document the two-pass apply.
+
+## 4. Shared commit status keys collide in activePath mode
+
+**Severity**: Blocker (for activePath multi-component use)
+
+**Problem**: When multiple components share the same active branch (the whole point of activePath), they also share the same commit SHA on that branch. If different PromotionStrategies use the same commit status keys (e.g. `ci-check`, `deploy`), the controller creates multiple `CommitStatus` CRs with the same SHA+key combination. The CTP then fails with:
+
+```
+there are too many matching SHAs for the 'deploy' commit status:
+  promoter-system/deploy-app-c-..., promoter-system/deploy-app-d-..., and 3 more...
+```
+
+This completely blocks promotion for all components.
+
+**Root cause**: `CommitStatus` CRs are matched by `(sha, key)`. With shared active branches, all components see the same SHA, so their CommitStatus CRs collide when using the same key.
+
+**Workaround**: Use component-specific keys: `ci-check-app-a`, `deploy-app-a`, etc. instead of shared `ci-check`, `deploy`.
+
+**Root cause in code**: `internal/controller/changetransferpolicy_controller.go:667-673` matches CommitStatus CRs by label `commit-status=<key>` + field `spec.sha=<sha>`. With shared branches, all components produce CommitStatus CRs with the same SHA and key.
+
+**Proposed fix**: Add a `promotionStrategyRef` or `changeTransferPolicy` label to CommitStatus CRs, and filter on it in the CTP controller. The WebRequestCommitStatus controller already sets a `web-request-commit-status` label — a similar approach for PromotionStrategy ownership would scope the lookup correctly.
+
+**Current workaround**: Use component-specific keys (`ci-app-a`, `deploy-app-a`) instead of shared keys (`ci-check`, `deploy`). This works but defeats the simplicity of the activePath pattern.
+
+## 5. Default memory limit too low for activePath monorepo
+
+**Severity**: Minor
+
+**Problem**: The default `install.yaml` sets a 128Mi memory limit on the controller. With activePath mode, each PromotionStrategy creates CTPs for all environments, and each CTP clones the repo. For our 5-component × 6-environment setup (30 CTPs), the controller OOMKills.
+
+**Workaround**: Increase memory limit:
+```bash
+kubectl -n promoter-system patch deployment promoter-controller-manager \
+  --type=json -p='[{"op":"replace","path":"/spec/template/spec/containers/0/resources/limits/memory","value":"512Mi"}]'
+```
+
+**Suggestion**: Document memory requirements based on number of components × environments, or auto-scale based on CTP count.
+

@@ -97,12 +97,14 @@ jobs:
           }
           EOF
 
-            # Check if proposed branch exists
+            # Check if proposed branch exists, otherwise create from active branch
             if git ls-remote --exit-code origin "$PROPOSED_BRANCH" > /dev/null 2>&1; then
               git fetch origin "$PROPOSED_BRANCH"
               git checkout "$PROPOSED_BRANCH"
+            elif git ls-remote --exit-code origin "$ACTIVE_BRANCH" > /dev/null 2>&1; then
+              git fetch origin "$ACTIVE_BRANCH"
+              git checkout -b "$PROPOSED_BRANCH" "origin/$ACTIVE_BRANCH"
             else
-              # Create orphan branch if it doesn't exist
               git checkout --orphan "$PROPOSED_BRANCH"
               git rm -rf . > /dev/null 2>&1 || true
             fi
