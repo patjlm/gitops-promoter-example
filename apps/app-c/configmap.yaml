@@ -8,6 +8,6 @@ metadata:
     app: app-c
 data:
   redis.conf: |
-    maxmemory 64mb
+    maxmemory 128mb
     maxmemory-policy allkeys-lru
     save 60 1000
