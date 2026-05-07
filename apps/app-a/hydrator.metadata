@@ -1,7 +1,7 @@
 {
-  "drySha": "3d5926356007f7337aa56f364156bea2dc2fcf83",
+  "drySha": "20217370043149015db5a6950993f47b8f9c2add",
   "repoURL": "https://github.com/patjlm/gitops-promoter-example",
   "author": "patmarti@redhat.com",
-  "date": "2026-05-07T16:11:24+02:00",
-  "subject": "Re-hydrate all components when workflow files change"
+  "date": "2026-05-07T17:50:18+02:00",
+  "subject": "app-a+app-c: bump dev replicas and maxmemory"
 }
