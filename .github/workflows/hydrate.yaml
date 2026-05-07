@@ -97,6 +97,10 @@ jobs:
           }
           EOF
 
+            # Save workflow files before switching branches
+            cp .github/workflows/ci-checks.yaml "$OUTPUT_DIR/ci-checks.yaml"
+            cp .github/workflows/deploy.yaml "$OUTPUT_DIR/deploy.yaml"
+
             # Check if proposed branch exists, otherwise create from active branch
             if git ls-remote --exit-code origin "$PROPOSED_BRANCH" > /dev/null 2>&1; then
               git fetch origin "$PROPOSED_BRANCH"
@@ -115,8 +119,13 @@ jobs:
             cp "$OUTPUT_DIR/hydrator.metadata" "$ACTIVE_PATH/hydrator.metadata"
             cp "$HYDRATED_DIR"/* "$ACTIVE_PATH/"
 
+            # Copy workflow files so they exist on environment branches
+            mkdir -p .github/workflows
+            cp "$OUTPUT_DIR/ci-checks.yaml" .github/workflows/ci-checks.yaml
+            cp "$OUTPUT_DIR/deploy.yaml" .github/workflows/deploy.yaml
+
             # Check for changes (dedup)
-            git add "$ACTIVE_PATH"
+            git add "$ACTIVE_PATH" .github/workflows/
             if git diff --cached --quiet; then
               echo "No changes for ${{ matrix.component }} in $ENV, skipping"
               git checkout main
@@ -177,6 +186,10 @@ jobs:
           }
           EOF
 
+            # Save workflow files before switching branches
+            cp .github/workflows/ci-checks.yaml "$OUTPUT_DIR/ci-checks.yaml"
+            cp .github/workflows/deploy.yaml "$OUTPUT_DIR/deploy.yaml"
+
             if git ls-remote --exit-code origin "$PROPOSED_BRANCH" > /dev/null 2>&1; then
               git fetch origin "$PROPOSED_BRANCH"
               git checkout "$PROPOSED_BRANCH"
@@ -194,7 +207,12 @@ jobs:
             cp "$OUTPUT_DIR"/*.yaml "$ACTIVE_PATH/" 2>/dev/null || true
             cp "$OUTPUT_DIR"/*.yml "$ACTIVE_PATH/" 2>/dev/null || true
 
-            git add "$ACTIVE_PATH"
+            # Copy workflow files so they exist on environment branches
+            mkdir -p .github/workflows
+            cp "$OUTPUT_DIR/ci-checks.yaml" .github/workflows/ci-checks.yaml
+            cp "$OUTPUT_DIR/deploy.yaml" .github/workflows/deploy.yaml
+
+            git add "$ACTIVE_PATH" .github/workflows/
             if git diff --cached --quiet; then
               echo "No changes for ${{ matrix.component }} in $ENV, skipping"
               git checkout main
@@ -248,6 +266,10 @@ jobs:
           }
           EOF
 
+            # Save workflow files before switching branches
+            cp .github/workflows/ci-checks.yaml "$OUTPUT_DIR/ci-checks.yaml"
+            cp .github/workflows/deploy.yaml "$OUTPUT_DIR/deploy.yaml"
+
             if git ls-remote --exit-code origin "$PROPOSED_BRANCH" > /dev/null 2>&1; then
               git fetch origin "$PROPOSED_BRANCH"
               git checkout "$PROPOSED_BRANCH"
@@ -263,7 +285,12 @@ jobs:
             mkdir -p "$ACTIVE_PATH"
             cp "$OUTPUT_DIR"/* "$ACTIVE_PATH/"
 
-            git add "$ACTIVE_PATH"
+            # Copy workflow files so they exist on environment branches
+            mkdir -p .github/workflows
+            cp "$OUTPUT_DIR/ci-checks.yaml" .github/workflows/ci-checks.yaml
+            cp "$OUTPUT_DIR/deploy.yaml" .github/workflows/deploy.yaml
+
+            git add "$ACTIVE_PATH" .github/workflows/
             if git diff --cached --quiet; then
               echo "No changes for infra-e in $ENV, skipping"
               git checkout main

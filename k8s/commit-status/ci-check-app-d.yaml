@@ -22,7 +22,7 @@ spec:
   success:
     when:
       expression: >-
-        Response \!= nil ? Response.Body.state == "success" : Phase == "success"
+        Response != nil ? Response.Body.state == "success" : Phase == "success"
   mode:
     context: environments
     polling:

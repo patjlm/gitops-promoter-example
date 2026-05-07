@@ -146,3 +146,15 @@ GET /repos/patjlm/gitops-promoter-example/pulls?base=environment/development&hea
 
 **Fix**: In `FindOpen`, prefix the `Head` parameter with the repo owner: `Head: fmt.Sprintf("%s:%s", gitRepo.Spec.GitHub.Owner, pullRequest.Spec.SourceBranch)`.
 
+**Status**: Fixed in our submodule (commit `f390cb3`). Verified: after the fix, the `fec60` run produced 30 PRs (5 components × 6 environments) with no title/branch mismatches.
+
+## 8. No exponential backoff on GitHub API rate limits
+
+**Severity**: Medium
+
+**Problem**: When the controller hits GitHub API rate limits (403), it continues retrying at the normal reconciliation interval, burning through the remaining budget and delaying recovery. With 30 CTPs and multiple CommitStatus CRs all reconciling, the rate limit is hit quickly on fresh deployments.
+
+**Observed**: `API rate limit exceeded for installation ID ... [rate reset in 24m21s]` — the controller kept retrying during the cooldown period.
+
+**Suggestion**: Respect the `rate reset` timestamp from the GitHub response and pause reconciliation until the limit resets, or implement exponential backoff on 403 responses.
+
