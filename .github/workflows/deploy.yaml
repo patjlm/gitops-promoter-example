@@ -1,0 +1,50 @@
+name: Fake Deploy
+
+on:
+  push:
+    branches:
+      - environment/development
+      - environment/integration
+      - environment/stage
+      - environment/prod-1
+      - environment/prod-2
+      - environment/prod-3
+
+permissions:
+  statuses: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect component
+        id: detect
+        run: |
+          changed=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git ls-tree -r --name-only HEAD)
+          if echo "$changed" | grep -q "^apps/"; then
+            COMPONENT=$(echo "$changed" | grep "^apps/" | head -1 | cut -d/ -f2)
+          elif echo "$changed" | grep -q "^infra/"; then
+            COMPONENT=$(echo "$changed" | grep "^infra/" | head -1 | cut -d/ -f2)
+          else
+            COMPONENT="unknown"
+          fi
+          echo "component=$COMPONENT" >> "$GITHUB_OUTPUT"
+
+      - name: Simulate deployment
+        run: |
+          echo "Deploying ${{ steps.detect.outputs.component }}..."
+          sleep 5
+          echo "Deployment complete."
+
+      - name: Report deployment success
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api \
+            --method POST \
+            "/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -f state=success \
+            -f context=deploy \
+            -f description="Deployment of ${{ steps.detect.outputs.component }} succeeded"
