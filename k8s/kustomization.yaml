@@ -2,7 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - scm-provider.yaml
+  # scm-provider.yaml excluded — contains placeholder appID/installationID.
+  # Apply it manually with real values, or patch after kubectl apply.
   - git-repository.yaml
   - promotion-strategies/app-a.yaml
   - promotion-strategies/app-b.yaml
