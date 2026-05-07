@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: promoter-dashboard
+  namespace: promoter-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: promoter-dashboard
+  template:
+    metadata:
+      labels:
+        app: promoter-dashboard
+    spec:
+      serviceAccountName: promoter-controller-manager
+      containers:
+        - name: dashboard
+          image: quay.io/patmarti/gitops-promoter:pr-1337
+          args: ["dashboard", "--port", "8080"]
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: promoter-dashboard
+  namespace: promoter-system
+spec:
+  selector:
+    app: promoter-dashboard
+  ports:
+    - port: 8080
+      targetPort: 8080

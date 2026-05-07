@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - install.yaml
+  - dashboard.yaml
 
 images:
   - name: quay.io/argoprojlabs/gitops-promoter
