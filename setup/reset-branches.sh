@@ -30,18 +30,20 @@ for env in $ENVIRONMENTS; do
   fi
 done
 
-# Recreate environment branches as empty orphans
+# Recreate environment branches as empty orphans using a temporary clone
+# (never touch the local worktree to avoid destroying the submodule)
 echo "--- Creating fresh environment branches ---"
+TMPCLONE=$(mktemp -d)
+git clone --no-checkout --depth=1 "$(git remote get-url origin)" "$TMPCLONE" 2>&1
 for env in $ENVIRONMENTS; do
   BRANCH="environment/$env"
   echo "  Creating $BRANCH"
-  git checkout --orphan "$BRANCH"
-  git rm -rf . 2>/dev/null || true
-  git -c commit.gpgsign=false commit --allow-empty -m "initialize $BRANCH"
-  git push origin "$BRANCH" 2>&1
-  git checkout main
-  git branch -D "$BRANCH"
+  git -C "$TMPCLONE" checkout --orphan "$BRANCH"
+  git -C "$TMPCLONE" rm -rf . 2>/dev/null || true
+  git -C "$TMPCLONE" -c commit.gpgsign=false commit --allow-empty -m "initialize $BRANCH"
+  git -C "$TMPCLONE" push origin "$BRANCH" 2>&1
 done
+rm -rf "$TMPCLONE"
 
 # Clean up stale CommitStatus CRs if kubectl is available
 if command -v kubectl &> /dev/null && kubectl -n promoter-system get commitstatus &> /dev/null; then
