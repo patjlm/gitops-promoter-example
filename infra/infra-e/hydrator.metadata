@@ -1,0 +1,7 @@
+{
+  "drySha": "3d5926356007f7337aa56f364156bea2dc2fcf83",
+  "repoURL": "https://github.com/patjlm/gitops-promoter-example",
+  "author": "patmarti@redhat.com",
+  "date": "2026-05-07T16:11:24+02:00",
+  "subject": "Re-hydrate all components when workflow files change"
+}
