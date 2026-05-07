@@ -133,5 +133,16 @@ kubectl -n promoter-system patch deployment promoter-controller-manager \
 - PullRequest CRs had correct `spec.sourceBranch` and `spec.title` at time of inspection
 - GitHub `Create` API is called with correct `head`/`title` from the PullRequest CR spec
 
-**Root cause**: Unknown. Needs reproduction with controller logs to trace which CTP adopted which PullRequest CR.
+**Root cause**: `FindOpen` in `internal/scms/github/pullrequest.go:206` passes `pullRequest.Spec.SourceBranch` directly as the `Head` filter parameter to GitHub's List Pull Requests API. GitHub requires the format `owner:branch` for the `head` filter — without the `owner:` prefix, GitHub silently ignores the filter and returns **all** open PRs for the base branch. `FindOpen` then picks `pullRequests[0]` (whichever GitHub returns first) and adopts its ID. The subsequent `Update` call overwrites that PR's title with the wrong component's data.
+
+Verified with the GitHub API:
+```
+# Without owner: prefix — returns ALL open PRs for base (4 results)
+GET /repos/patjlm/gitops-promoter-example/pulls?base=environment/development&head=environment/development-next/apps/app-b&state=open → 4
+
+# With owner: prefix — correctly filters (0 results, PR already merged)
+GET /repos/patjlm/gitops-promoter-example/pulls?base=environment/development&head=patjlm:environment/development-next/apps/app-b&state=open → 0
+```
+
+**Fix**: In `FindOpen`, prefix the `Head` parameter with the repo owner: `Head: fmt.Sprintf("%s:%s", gitRepo.Spec.GitHub.Owner, pullRequest.Spec.SourceBranch)`.
 
