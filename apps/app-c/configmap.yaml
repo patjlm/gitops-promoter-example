@@ -1,0 +1,13 @@
+---
+# Source: app-c/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-c-config
+  labels:
+    app: app-c
+data:
+  redis.conf: |
+    maxmemory 256mb
+    maxmemory-policy allkeys-lru
+    save 60 1000
