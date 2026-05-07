@@ -29,7 +29,7 @@ there are too many matching SHAs for the 'ci-check' commit status
 
 This blocks promotion for all components. The workaround is component-specific keys (`ci-check-app-a`), but that defeats the simplicity of activePath.
 
-**Fix** ([`59014dc`](https://github.com/patjlm/gitops-promoter/commit/59014dc)): Add an `ActivePathLabel` to CommitStatus CRs (set by WebRequestCommitStatus and TimedCommitStatus controllers), and filter on it in `setCommitStatusState`. Similar to the existing `web-request-commit-status` label approach.
+**Fix** ([`59014dc`](https://github.com/patjlm/gitops-promoter/commit/59014dc), [`404a8ff`](https://github.com/patjlm/gitops-promoter/commit/404a8ff)): Add an `ActivePathLabel` to CommitStatus CRs and filter on it in `setCommitStatusState`. The label must be set everywhere CommitStatus CRs are created: WebRequestCommitStatus controller, TimedCommitStatus controller, and `createOrUpdatePreviousEnvironmentCommitStatus` in the PromotionStrategy controller. Without the label on `promoter-previous-environment` CRs, promotion beyond the first environment is blocked.
 
 ### 3. PR title and description should include activePath
 

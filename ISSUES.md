@@ -89,6 +89,13 @@ This completely blocks promotion for all components.
 
 **Current workaround**: Use component-specific keys (`ci-app-a`, `deploy-app-a`) instead of shared keys (`ci-check`, `deploy`). This works but defeats the simplicity of the activePath pattern.
 
+**Fix**: Add an `ActivePathLabel` to CommitStatus CRs and filter on it in `setCommitStatusState`. The label must be set in all places that create CommitStatus CRs:
+- `webrequestcommitstatus_controller.go` (commit `e6c0b79`)
+- `timedcommitstatus_controller.go` (commit `e6c0b79`)
+- `promotionstrategy_controller.go:createOrUpdatePreviousEnvironmentCommitStatus` (commit `404a8ff`) — without this, the `promoter-previous-environment` CommitStatus is invisible to the CTP controller and promotion beyond the first environment is blocked.
+
+**Status**: Fixed and verified. All 5 components promote through development → integration → stage with shared commit status keys.
+
 ## 5. Default memory limit too low for activePath monorepo
 
 **Severity**: Minor
