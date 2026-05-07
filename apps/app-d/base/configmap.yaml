@@ -6,3 +6,4 @@ data:
   ENVIRONMENT: "default"
   BATCH_SIZE: "100"
   LOG_LEVEL: "info"
+

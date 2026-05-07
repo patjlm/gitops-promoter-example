@@ -12,3 +12,4 @@ output "instance_count" {
   description = "Number of compute instances"
   value       = var.instance_count
 }
+
