@@ -1,0 +1,7 @@
+{
+  "drySha": "16ef70115e0f5afba5987e04a9bfc1a53198ff09",
+  "repoURL": "https://github.com/patjlm/gitops-promoter-example",
+  "author": "patmarti@redhat.com",
+  "date": "2026-05-07T12:40:29+02:00",
+  "subject": "Fix reset script to preserve submodule, update submodule"
+}
