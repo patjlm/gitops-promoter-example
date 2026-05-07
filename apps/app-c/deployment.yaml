@@ -1,0 +1,37 @@
+---
+# Source: app-c/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-c
+  labels:
+    app: app-c
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-c
+  template:
+    metadata:
+      labels:
+        app: app-c
+    spec:
+      containers:
+        - name: app-c
+          image: "redis:7.2-alpine"
+          ports:
+            - containerPort: 6379
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          volumeMounts:
+            - name: redis-config
+              mountPath: /usr/local/etc/redis/
+      volumes:
+        - name: redis-config
+          configMap:
+            name: app-c-config
