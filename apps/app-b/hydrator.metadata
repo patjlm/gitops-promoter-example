@@ -1,0 +1,7 @@
+{
+  "drySha": "75a9dd6001c19c5411c6c7eaf812c797bcda4aea",
+  "repoURL": "https://github.com/patjlm/gitops-promoter-example",
+  "author": "patmarti@redhat.com",
+  "date": "2026-05-07T12:10:38+02:00",
+  "subject": "Add setup/reset-branches.sh for clean branch resets"
+}
