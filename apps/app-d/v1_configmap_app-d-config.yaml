@@ -1,0 +1,11 @@
+apiVersion: v1
+data:
+  BATCH_SIZE: "100"
+  ENVIRONMENT: stage
+  LOG_LEVEL: info
+kind: ConfigMap
+metadata:
+  labels:
+    app: app-d
+  name: app-d-config
+  namespace: app-d-stage
