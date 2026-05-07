@@ -90,9 +90,9 @@ This completely blocks promotion for all components.
 **Current workaround**: Use component-specific keys (`ci-app-a`, `deploy-app-a`) instead of shared keys (`ci-check`, `deploy`). This works but defeats the simplicity of the activePath pattern.
 
 **Fix**: Add an `ActivePathLabel` to CommitStatus CRs and filter on it in `setCommitStatusState`. The label must be set in all places that create CommitStatus CRs:
-- `webrequestcommitstatus_controller.go` (commit `e6c0b79`)
-- `timedcommitstatus_controller.go` (commit `e6c0b79`)
-- `promotionstrategy_controller.go:createOrUpdatePreviousEnvironmentCommitStatus` (commit `404a8ff`) — without this, the `promoter-previous-environment` CommitStatus is invisible to the CTP controller and promotion beyond the first environment is blocked.
+- `webrequestcommitstatus_controller.go` (commit `6724e03`)
+- `timedcommitstatus_controller.go` (commit `6724e03`)
+- `promotionstrategy_controller.go:createOrUpdatePreviousEnvironmentCommitStatus` (commit `179f7e4`) — without this, the `promoter-previous-environment` CommitStatus is invisible to the CTP controller and promotion beyond the first environment is blocked.
 
 **Status**: Fixed and verified. All 5 components promote through development → integration → stage with shared commit status keys.
 
@@ -121,7 +121,7 @@ kubectl -n promoter-system patch deployment promoter-controller-manager \
 
 **Suggestion**: When `activePath` is set, include it in the PR title and body to distinguish per-component promotions.
 
-**Status**: Fixed in our submodule (commit `cc6efb5`). The default PR template now uses `{{ with .ChangeTransferPolicy.Spec.ActivePath }}` to conditionally include the path.
+**Status**: Fixed in our submodule (commit `78ea4e6`). The default PR template now uses `{{ with .ChangeTransferPolicy.Spec.ActivePath }}` to conditionally include the path.
 
 ## 7. Potential for duplicate/mismatched PRs with shared active branches
 
@@ -153,7 +153,7 @@ GET /repos/patjlm/gitops-promoter-example/pulls?base=environment/development&hea
 
 **Fix**: In `FindOpen`, prefix the `Head` parameter with the repo owner: `Head: fmt.Sprintf("%s:%s", gitRepo.Spec.GitHub.Owner, pullRequest.Spec.SourceBranch)`.
 
-**Status**: Fixed in our submodule (commit `f390cb3`). Verified: after the fix, the `fec60` run produced 30 PRs (5 components × 6 environments) with no title/branch mismatches.
+**Status**: Fixed in our submodule (commit `f6d17cc`). Verified: after the fix, the `fec60` run produced 30 PRs (5 components × 6 environments) with no title/branch mismatches.
 
 ## 8. No exponential backoff on GitHub API rate limits
 

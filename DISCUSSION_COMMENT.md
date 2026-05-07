@@ -2,7 +2,7 @@ Testing report for PR #1337 (activePath)
 
 I built a [5-component × 6-environment example repo](https://github.com/patjlm/gitops-promoter-example) to test the `activePath` monorepo mode. Components use a mix of Helm, Kustomize, and Terraform, promoting through `development → integration → stage → prod-{1,2,3}` with shared active branches.
 
-I found and fixed 4 issues. Fixes are on my fork branch [`activepath-fixes`](https://github.com/patjlm/gitops-promoter/tree/activepath-fixes) (4 commits on top of PR #1337), happy to open a PR targeting this branch.
+I found and fixed 4 issues (5 commits). Fixes are in [PR #1408](https://github.com/argoproj-labs/gitops-promoter/pull/1408) targeting the PR #1337 branch.
 
 ### 1. Git ref conflict: proposed branch names conflict with active branch names
 
@@ -15,7 +15,7 @@ error: cannot lock ref 'refs/heads/environment/development/apps/app-a-next':
   'refs/heads/environment/development' exists
 ```
 
-**Fix** ([`766d3e0`](https://github.com/patjlm/gitops-promoter/commit/766d3e0)): Append activePath to the existing `-next` convention — `environment/development-next/apps/app-a`. No conflict, consistent with non-activePath naming.
+**Fix** ([`35a2978`](https://github.com/patjlm/gitops-promoter/commit/35a2978)): Append activePath to the existing `-next` convention — `environment/development-next/apps/app-a`. No conflict, consistent with non-activePath naming.
 
 ### 2. Shared commit status keys collide in activePath mode
 
@@ -29,7 +29,7 @@ there are too many matching SHAs for the 'ci-check' commit status
 
 This blocks promotion for all components. The workaround is component-specific keys (`ci-check-app-a`), but that defeats the simplicity of activePath.
 
-**Fix** ([`59014dc`](https://github.com/patjlm/gitops-promoter/commit/59014dc), [`404a8ff`](https://github.com/patjlm/gitops-promoter/commit/404a8ff)): Add an `ActivePathLabel` to CommitStatus CRs and filter on it in `setCommitStatusState`. The label must be set everywhere CommitStatus CRs are created: WebRequestCommitStatus controller, TimedCommitStatus controller, and `createOrUpdatePreviousEnvironmentCommitStatus` in the PromotionStrategy controller. Without the label on `promoter-previous-environment` CRs, promotion beyond the first environment is blocked.
+**Fix** ([`6724e03`](https://github.com/patjlm/gitops-promoter/commit/6724e03), [`179f7e4`](https://github.com/patjlm/gitops-promoter/commit/179f7e4)): Add an `ActivePathLabel` to CommitStatus CRs and filter on it in `setCommitStatusState`. The label must be set everywhere CommitStatus CRs are created: WebRequestCommitStatus controller, TimedCommitStatus controller, and `createOrUpdatePreviousEnvironmentCommitStatus` in the PromotionStrategy controller. Without the label on `promoter-previous-environment` CRs, promotion beyond the first environment is blocked.
 
 ### 3. PR title and description should include activePath
 
@@ -37,7 +37,7 @@ This blocks promotion for all components. The workaround is component-specific k
 
 With shared active branches, all PRs are titled `Promote <sha> to environment/development` — indistinguishable. The activePath should be included to identify which component is being promoted.
 
-**Fix** ([`5e13fa3`](https://github.com/patjlm/gitops-promoter/commit/5e13fa3)): Update the default PR title template to conditionally include activePath: `` Promote `apps/app-a` (32119) to `environment/development` ``.
+**Fix** ([`78ea4e6`](https://github.com/patjlm/gitops-promoter/commit/78ea4e6)): Update the default PR title template to conditionally include activePath: `` Promote `apps/app-a` (32119) to `environment/development` ``.
 
 ### 4. FindOpen returns wrong PR when multiple PRs target the same base branch
 
@@ -54,4 +54,4 @@ GET /repos/.../pulls?base=environment/development&head=environment/development-n
 GET /repos/.../pulls?base=environment/development&head=patjlm:environment/development-next/apps/app-b&state=open → 0
 ```
 
-**Fix** ([`23a6558`](https://github.com/patjlm/gitops-promoter/commit/23a6558)): Prefix `Head` with `gitRepo.Spec.GitHub.Owner`.
+**Fix** ([`f6d17cc`](https://github.com/patjlm/gitops-promoter/commit/f6d17cc)): Prefix `Head` with `gitRepo.Spec.GitHub.Owner`.
