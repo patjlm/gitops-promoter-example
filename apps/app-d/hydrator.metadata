@@ -1,0 +1,7 @@
+{
+  "drySha": "b11d0696a447bcfb3e614706b882d82f9a276c2c",
+  "repoURL": "https://github.com/patjlm/gitops-promoter-example",
+  "author": "patmarti@redhat.com",
+  "date": "2026-05-07T09:50:15+02:00",
+  "subject": "Fix hydrator: branch from active for all component types"
+}
