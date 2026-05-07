@@ -1,0 +1,7 @@
+{
+  "drySha": "fec60bddd70d0906a623cae73c481e4fae1de853",
+  "repoURL": "https://github.com/patjlm/gitops-promoter-example",
+  "author": "patmarti@redhat.com",
+  "date": "2026-05-07T15:17:00+02:00",
+  "subject": "Fix GitHub FindOpen head filter and update ISSUES.md"
+}
