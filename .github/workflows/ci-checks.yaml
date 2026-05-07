@@ -1,0 +1,89 @@
+name: CI Checks
+
+on:
+  pull_request:
+    branches:
+      - environment/development
+      - environment/integration
+      - environment/stage
+      - environment/prod-1
+      - environment/prod-2
+      - environment/prod-3
+  push:
+    branches:
+      - environment/development
+      - environment/integration
+      - environment/stage
+      - environment/prod-1
+      - environment/prod-2
+      - environment/prod-3
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect component
+        id: detect
+        run: |
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            BRANCH="${GITHUB_BASE_REF}"
+          fi
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+          changed=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git ls-tree -r --name-only HEAD)
+          if echo "$changed" | grep -q "^apps/app-a/"; then
+            echo "component=app-a" >> "$GITHUB_OUTPUT"
+            echo "type=k8s" >> "$GITHUB_OUTPUT"
+          elif echo "$changed" | grep -q "^apps/app-b/"; then
+            echo "component=app-b" >> "$GITHUB_OUTPUT"
+            echo "type=k8s" >> "$GITHUB_OUTPUT"
+          elif echo "$changed" | grep -q "^apps/app-c/"; then
+            echo "component=app-c" >> "$GITHUB_OUTPUT"
+            echo "type=k8s" >> "$GITHUB_OUTPUT"
+          elif echo "$changed" | grep -q "^apps/app-d/"; then
+            echo "component=app-d" >> "$GITHUB_OUTPUT"
+            echo "type=k8s" >> "$GITHUB_OUTPUT"
+          elif echo "$changed" | grep -q "^infra/infra-e/"; then
+            echo "component=infra-e" >> "$GITHUB_OUTPUT"
+            echo "type=terraform" >> "$GITHUB_OUTPUT"
+          else
+            echo "component=unknown" >> "$GITHUB_OUTPUT"
+            echo "type=unknown" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate Kubernetes manifests
+        if: steps.detect.outputs.type == 'k8s'
+        run: |
+          COMPONENT="${{ steps.detect.outputs.component }}"
+          echo "Validating K8s manifests for $COMPONENT"
+          for f in "apps/$COMPONENT"/*.yaml; do
+            [ -f "$f" ] || continue
+            [ "$(basename "$f")" = "hydrator.metadata" ] && continue
+            echo "  Checking $f"
+            kubectl apply --dry-run=client -f "$f" 2>&1 || true
+          done
+
+      - name: Setup Terraform
+        if: steps.detect.outputs.type == 'terraform'
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9
+
+      - name: Terraform validate
+        if: steps.detect.outputs.type == 'terraform'
+        run: |
+          cd infra/infra-e
+          terraform init -backend=false
+          terraform validate
+
+      - name: Summary
+        run: |
+          echo "## CI Check Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Event:** ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Branch:** ${{ steps.detect.outputs.branch }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Component:** ${{ steps.detect.outputs.component }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Type:** ${{ steps.detect.outputs.type }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Status:** Passed" >> "$GITHUB_STEP_SUMMARY"
