@@ -1,0 +1,35 @@
+---
+# Source: app-a/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-a
+  labels:
+    app: app-a
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: app-a
+  template:
+    metadata:
+      labels:
+        app: app-a
+    spec:
+      containers:
+        - name: app-a
+          image: "nginx:1.25"
+          ports:
+            - containerPort: 80
+          env:
+            - name: ENVIRONMENT
+              value: "prod-2"
+            - name: LOG_LEVEL
+              value: "error"
+          resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
