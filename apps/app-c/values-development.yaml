@@ -1,4 +1,4 @@
 replicaCount: 1
 
 config:
-  maxmemory: "64mb"
+  maxmemory: "128mb"
