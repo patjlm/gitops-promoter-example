@@ -1,0 +1,16 @@
+---
+# Source: app-c/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-c
+  labels:
+    app: app-c
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6379
+      targetPort: 6379
+      protocol: TCP
+  selector:
+    app: app-c
