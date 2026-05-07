@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: app-b
+    env: stage
+  name: app-b
+  namespace: app-b-stage
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app-b
+      env: stage
+  template:
+    metadata:
+      labels:
+        app: app-b
+        env: stage
+    spec:
+      containers:
+      - image: kennethreitz/httpbin:latest
+        name: app-b
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
