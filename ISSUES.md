@@ -114,3 +114,24 @@ kubectl -n promoter-system patch deployment promoter-controller-manager \
 
 **Suggestion**: When `activePath` is set, include it in the PR title and body to distinguish per-component promotions.
 
+**Status**: Fixed in our submodule (commit `cc6efb5`). The default PR template now uses `{{ with .ChangeTransferPolicy.Spec.ActivePath }}` to conditionally include the path.
+
+## 7. Potential for duplicate/mismatched PRs with shared active branches
+
+**Severity**: Medium
+
+**Problem**: Two PRs titled `Promote apps/app-d` were created — one with the wrong source branch (`app-b` instead of `app-d`). This happened during a clean run: push to main → hydration → promoter creates PRs for all 5 components targeting the same active branch.
+
+**Investigation**: CTP names are 38 chars (under the 63-char `KubeSafeLabel` limit), so label truncation collisions are NOT the cause. The root cause is unknown — possibly a race condition in `setPullRequestState` or `mergePullRequests` when multiple CTPs targeting the same active branch reconcile concurrently.
+
+**Code area**: `setPullRequestState` (line ~748) and `mergePullRequests` (line ~1183) in `changetransferpolicy_controller.go` look up PullRequest CRs by label only. Neither validates that the found PR's `spec.sourceBranch` matches the CTP's `proposedBranch`.
+
+**Observed data**:
+- PR #36: title `apps/app-d`, head branch `apps/app-b`, PR #37: title `apps/app-d`, head branch `apps/app-d` — both created at `2026-05-07T10:40:54Z`
+- PR #44: title `infra/infra-e`, head branch `apps/app-a`
+- CTP names are 38 chars (no `KubeSafeLabel` truncation)
+- PullRequest CRs had correct `spec.sourceBranch` and `spec.title` at time of inspection
+- GitHub `Create` API is called with correct `head`/`title` from the PullRequest CR spec
+
+**Root cause**: Unknown. Needs reproduction with controller logs to trace which CTP adopted which PullRequest CR.
+
