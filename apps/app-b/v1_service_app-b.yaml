@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: app-b
+    env: integration
+  name: app-b
+  namespace: app-b-integration
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: app-b
+    env: integration
+  type: ClusterIP
