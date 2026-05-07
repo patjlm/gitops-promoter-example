@@ -103,3 +103,14 @@ kubectl -n promoter-system patch deployment promoter-controller-manager \
 
 **Suggestion**: Document memory requirements based on number of components × environments, or auto-scale based on CTP count.
 
+## 6. PR title and description should include activePath
+
+**Severity**: Enhancement
+
+**Problem**: In activePath mode, PRs are titled `Promote <sha> to environment/development`. With multiple components sharing branches, all PRs look identical. The activePath (component being promoted) should be included.
+
+**Current**: `Promote 32119 to environment/development`
+**Expected**: `Promote apps/app-a (32119) to environment/development` or similar
+
+**Suggestion**: When `activePath` is set, include it in the PR title and body to distinguish per-component promotions.
+
