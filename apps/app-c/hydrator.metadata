@@ -1,7 +1,7 @@
 {
-  "drySha": "b23617c8d94a5a57ad04498ee7ba42ccfaff6fe4",
+  "drySha": "ae2108fed560bf06a94122fea95d181a9577e35c",
   "repoURL": "https://github.com/patjlm/gitops-promoter-example",
   "author": "patmarti@redhat.com",
-  "date": "2026-05-27T15:34:07+02:00",
-  "subject": "app-c: bump redis to 7.4-alpine (Test 1: component isolation)"
+  "date": "2026-05-27T18:06:03+02:00",
+  "subject": "ci: use component-specific status contexts to isolate per-component CI gates"
 }
