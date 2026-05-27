@@ -19,7 +19,7 @@ spec:
         env: prod-1
     spec:
       containers:
-      - image: kennethreitz/httpbin:latest
+      - image: kennethreitz/httpbin:v1.0
         name: app-b
         ports:
         - containerPort: 80
