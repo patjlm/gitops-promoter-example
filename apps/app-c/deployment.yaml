@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: app-c
-          image: "redis:7.2-alpine"
+          image: "redis:7.4-alpine"
           ports:
             - containerPort: 6379
           resources:
@@ -35,3 +35,4 @@ spec:
         - name: redis-config
           configMap:
             name: app-c-config
+
