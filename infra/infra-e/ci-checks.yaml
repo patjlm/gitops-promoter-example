@@ -45,20 +45,20 @@ jobs:
               echo "type=unknown" >> "$GITHUB_OUTPUT"
             fi
           else
-            # On push to active branch: detect from changed files (HEAD~1 vs HEAD)
-            changed=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git ls-tree -r --name-only HEAD)
-            if echo "$changed" | grep -q "^apps/app-a/"; then
-              COMPONENT="app-a"; echo "type=k8s" >> "$GITHUB_OUTPUT"
-            elif echo "$changed" | grep -q "^apps/app-b/"; then
-              COMPONENT="app-b"; echo "type=k8s" >> "$GITHUB_OUTPUT"
-            elif echo "$changed" | grep -q "^apps/app-c/"; then
-              COMPONENT="app-c"; echo "type=k8s" >> "$GITHUB_OUTPUT"
-            elif echo "$changed" | grep -q "^apps/app-d/"; then
-              COMPONENT="app-d"; echo "type=k8s" >> "$GITHUB_OUTPUT"
-            elif echo "$changed" | grep -q "^infra/infra-e/"; then
-              COMPONENT="infra-e"; echo "type=terraform" >> "$GITHUB_OUTPUT"
+            # On push to active branch (post-merge): extract component from merge commit message
+            # Merge commit message pattern: "Merge pull request #N from patjlm/environment/<env>-next/<path>"
+            COMMIT_MSG=$(git log -1 --format='%s')
+            if echo "$COMMIT_MSG" | grep -oP 'environment/[^/]+-next/\K[^ ]+' | grep -q "^apps/"; then
+              COMPONENT_PATH=$(echo "$COMMIT_MSG" | grep -oP 'environment/[^/]+-next/\K[^ ]+')
+              COMPONENT=$(echo "$COMPONENT_PATH" | cut -d/ -f2)
+              echo "type=k8s" >> "$GITHUB_OUTPUT"
+            elif echo "$COMMIT_MSG" | grep -oP 'environment/[^/]+-next/\K[^ ]+' | grep -q "^infra/"; then
+              COMPONENT_PATH=$(echo "$COMMIT_MSG" | grep -oP 'environment/[^/]+-next/\K[^ ]+')
+              COMPONENT=$(echo "$COMPONENT_PATH" | cut -d/ -f2)
+              echo "type=terraform" >> "$GITHUB_OUTPUT"
             else
-              COMPONENT="unknown"; echo "type=unknown" >> "$GITHUB_OUTPUT"
+              COMPONENT="unknown"
+              echo "type=unknown" >> "$GITHUB_OUTPUT"
             fi
           fi
           echo "component=$COMPONENT" >> "$GITHUB_OUTPUT"
@@ -88,9 +88,13 @@ jobs:
           FAILED=0
           for f in "apps/$COMPONENT"/*.yaml; do
             [ -f "$f" ] || continue
-            [ "$(basename "$f")" = "hydrator.metadata" ] && continue
+            # Skip non-manifest files
+            FNAME=$(basename "$f")
+            [ "$FNAME" = "hydrator.metadata" ] && continue
+            [ "$FNAME" = "ci-checks.yaml" ] && continue
+            [ "$FNAME" = "deploy.yaml" ] && continue
             echo "  Checking $f"
-            # Fail if test-ci-fail annotation is present (simulates a CI validation failure)
+            # Fail if test-ci-fail annotation is present (explicit failure marker for testing)
             if grep -q 'test-ci-fail: "true"' "$f" 2>/dev/null; then
               echo "  ERROR: test-ci-fail annotation found in $f — manifest marked as failing CI"
               FAILED=1
