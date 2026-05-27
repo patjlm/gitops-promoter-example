@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: redis
-  tag: "7.2-alpine"
+  tag: "7.4-alpine"
 
 service:
   type: ClusterIP
