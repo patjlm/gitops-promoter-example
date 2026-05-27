@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: app-b
-          image: kennethreitz/httpbin:latest
+          image: kennethreitz/httpbin:v1.0
           ports:
             - containerPort: 80
           resources:
