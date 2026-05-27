@@ -19,6 +19,6 @@ spec:
     - branch: environment/prod-1
       autoMerge: false
     - branch: environment/prod-2
-      autoMerge: false
+      autoMerge: true
     - branch: environment/prod-3
-      autoMerge: false
+      autoMerge: true
