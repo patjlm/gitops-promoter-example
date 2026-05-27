@@ -1,7 +1,7 @@
 {
-  "drySha": "181e2160c221f09851cf4593798b5456b9467066",
+  "drySha": "e668297d0e2ea04defaec7ac5e3546ecdbdf9a9c",
   "repoURL": "https://github.com/patjlm/gitops-promoter-example",
   "author": "patmarti@redhat.com",
-  "date": "2026-05-07T17:09:37+02:00",
-  "subject": "app-b: bump memory limit to 192Mi"
+  "date": "2026-05-27T15:00:07+02:00",
+  "subject": "app-a+app-b+infra-e: bump versions and enable monitoring"
 }
