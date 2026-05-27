@@ -1,7 +1,7 @@
 {
-  "drySha": "fb65be971e79c95dbdff743bb227f67409a42ee4",
+  "drySha": "78cdd5df80b7199b263b9fe62052b31682dffce0",
   "repoURL": "https://github.com/patjlm/gitops-promoter-example",
   "author": "patmarti@redhat.com",
-  "date": "2026-05-27T17:47:17+02:00",
-  "subject": "ci: fix ci-checks to report commit statuses and fail on test-ci-fail marker"
+  "date": "2026-05-27T17:53:53+02:00",
+  "subject": "ci: fix component detection for push events and skip workflow files in grep"
 }
