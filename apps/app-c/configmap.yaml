@@ -11,3 +11,4 @@ data:
     maxmemory 512mb
     maxmemory-policy allkeys-lru
     save 30 100
+
