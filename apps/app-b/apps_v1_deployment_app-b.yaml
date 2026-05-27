@@ -1,6 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    test-ci-fail: "true"
   labels:
     app: app-b
     env: prod-3
