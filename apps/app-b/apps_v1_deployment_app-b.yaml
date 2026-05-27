@@ -1,13 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    test-ci-fail: "true"
   labels:
     app: app-b
     env: prod-1
   name: app-b
   namespace: app-b-prod-1
 spec:
-  invalidFieldForTest: this-should-fail-kubectl-dry-run
   replicas: 3
   selector:
     matchLabels:
