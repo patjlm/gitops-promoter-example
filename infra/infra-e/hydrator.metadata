@@ -1,7 +1,7 @@
 {
-  "drySha": "e668297d0e2ea04defaec7ac5e3546ecdbdf9a9c",
+  "drySha": "ae2108fed560bf06a94122fea95d181a9577e35c",
   "repoURL": "https://github.com/patjlm/gitops-promoter-example",
   "author": "patmarti@redhat.com",
-  "date": "2026-05-27T15:00:07+02:00",
-  "subject": "app-a+app-b+infra-e: bump versions and enable monitoring"
+  "date": "2026-05-27T18:06:03+02:00",
+  "subject": "ci: use component-specific status contexts to isolate per-component CI gates"
 }
