@@ -7,6 +7,7 @@ metadata:
   name: app-b
   namespace: app-b-prod-3
 spec:
+  invalidFieldForTest: this-should-fail-kubectl-dry-run
   replicas: 3
   selector:
     matchLabels:

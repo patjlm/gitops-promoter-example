@@ -1,7 +1,7 @@
 {
-  "drySha": "e668297d0e2ea04defaec7ac5e3546ecdbdf9a9c",
+  "drySha": "768629c03cb0f3cdcc60e150c9da8f7b9607f415",
   "repoURL": "https://github.com/patjlm/gitops-promoter-example",
   "author": "patmarti@redhat.com",
-  "date": "2026-05-27T15:00:07+02:00",
-  "subject": "app-a+app-b+infra-e: bump versions and enable monitoring"
+  "date": "2026-05-27T17:41:05+02:00",
+  "subject": "test: break app-b CI, bump app-c replicaCount"
 }
