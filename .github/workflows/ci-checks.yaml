@@ -73,12 +73,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          COMPONENT="${{ steps.detect.outputs.component }}"
           gh api \
             --method POST \
             "/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
             -f state=pending \
-            -f context="ci-check" \
-            -f description="CI checks running for ${{ steps.detect.outputs.component }}"
+            -f context="ci-check-${COMPONENT}" \
+            -f description="CI checks running for ${COMPONENT}"
 
       - name: Validate Kubernetes manifests
         if: steps.detect.outputs.type == 'k8s'
@@ -123,24 +124,26 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          COMPONENT="${{ steps.detect.outputs.component }}"
           gh api \
             --method POST \
             "/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
             -f state=success \
-            -f context="ci-check" \
-            -f description="CI checks passed for ${{ steps.detect.outputs.component }}"
+            -f context="ci-check-${COMPONENT}" \
+            -f description="CI checks passed for ${COMPONENT}"
 
       - name: Report CI failure
         if: failure() && steps.detect.outputs.component != 'unknown'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          COMPONENT="${{ steps.detect.outputs.component }}"
           gh api \
             --method POST \
             "/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
             -f state=failure \
-            -f context="ci-check" \
-            -f description="CI checks failed for ${{ steps.detect.outputs.component }}"
+            -f context="ci-check-${COMPONENT}" \
+            -f description="CI checks failed for ${COMPONENT}"
 
       - name: Summary
         if: always()
