@@ -1,7 +1,7 @@
 {
-  "drySha": "6564e51397f24ff8645c26d63359bd57513ce00e",
+  "drySha": "e668297d0e2ea04defaec7ac5e3546ecdbdf9a9c",
   "repoURL": "https://github.com/patjlm/gitops-promoter-example",
   "author": "patmarti@redhat.com",
-  "date": "2026-05-27T14:03:56+02:00",
-  "subject": "app-a: bump nginx to 1.27"
+  "date": "2026-05-27T15:00:07+02:00",
+  "subject": "app-a+app-b+infra-e: bump versions and enable monitoring"
 }
