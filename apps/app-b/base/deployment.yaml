@@ -2,9 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: app-b
+  annotations:
+    test-ci-fail: "true"
 spec:
   replicas: 1
-  invalidFieldForTest: "this-should-fail-kubectl-dry-run"
   selector:
     matchLabels:
       app: app-b
