@@ -22,7 +22,7 @@ spec:
   success:
     when:
       expression: >-
-        Response != nil ? Response.Body.state == "success" : Phase == "success"
+        Response \!= nil ? Response.Body.statuses.exists(s, s.context == "ci-check-app-b" && s.state == "success") : Phase == "success"
   mode:
     context: environments
     polling:
