@@ -8,14 +8,14 @@ spec:
     name: gitops-promoter-example
   activePath: infra/infra-e
   activeCommitStatuses:
-    - key: ci-check
-    - key: deploy
+    - key: ci-check-infra-e
+    - key: deploy-infra-e
   environments:
     - branch: environment/development
     - branch: environment/integration
     - branch: environment/stage
       activeCommitStatuses:
-        - key: timer
+        - key: timer-infra-e
     - branch: environment/prod-1
       autoMerge: false
     - branch: environment/prod-2

@@ -87,10 +87,10 @@ else
   if [[ -f "${SCRIPT_DIR}/install.yaml" ]]; then
     echo ""
     echo "Found setup/install.yaml, applying..."
-    kubectl apply -f "${SCRIPT_DIR}/install.yaml"
-    # Retry to handle CRD registration race condition
-    sleep 3
+    # First pass may fail on ControllerConfiguration CR due to CRD registration race; retry handles it
     kubectl apply -f "${SCRIPT_DIR}/install.yaml" 2>/dev/null || true
+    sleep 3
+    kubectl apply -f "${SCRIPT_DIR}/install.yaml"
     kubectl -n promoter-system set image deployment/promoter-controller-manager \
       manager="${PROMOTER_IMAGE}:${PROMOTER_TAG}"
   else

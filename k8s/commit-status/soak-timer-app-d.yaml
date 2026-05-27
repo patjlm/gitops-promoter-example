@@ -4,6 +4,7 @@ metadata:
   name: soak-timer-app-d
   namespace: promoter-system
 spec:
+  key: timer-app-d
   promotionStrategyRef:
     name: app-d
   environments:

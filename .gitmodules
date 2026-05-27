@@ -1,3 +1,3 @@
 [submodule "gitops-promoter"]
 	path = gitops-promoter
-	url = https://github.com/argoproj-labs/gitops-promoter.git
+	url = https://github.com/patjlm/gitops-promoter.git

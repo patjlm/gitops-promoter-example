@@ -6,7 +6,7 @@ metadata:
 spec:
   promotionStrategyRef:
     name: app-a
-  key: deploy
+  key: deploy-app-a
   descriptionTemplate: >-
     {{ if eq .Phase "success" }}Deployment succeeded{{ else }}Waiting for deployment{{ end }}
   urlTemplate: ""

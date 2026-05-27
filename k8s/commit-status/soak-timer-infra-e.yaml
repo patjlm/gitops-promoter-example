@@ -4,6 +4,7 @@ metadata:
   name: soak-timer-infra-e
   namespace: promoter-system
 spec:
+  key: timer-infra-e
   promotionStrategyRef:
     name: infra-e
   environments:

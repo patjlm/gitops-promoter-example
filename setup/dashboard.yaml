@@ -16,7 +16,7 @@ spec:
       serviceAccountName: promoter-controller-manager
       containers:
         - name: dashboard
-          image: quay.io/patmarti/gitops-promoter:pr-1337
+          image: quay.io/argoprojlabs/gitops-promoter:latest
           args: ["dashboard", "--port", "8080"]
           ports:
             - containerPort: 8080

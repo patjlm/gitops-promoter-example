@@ -6,7 +6,7 @@ metadata:
 spec:
   promotionStrategyRef:
     name: app-c
-  key: ci-check
+  key: ci-check-app-c
   descriptionTemplate: >-
     {{ if eq .Phase "success" }}CI checks passed{{ else }}Waiting for CI checks{{ end }}
   urlTemplate: ""

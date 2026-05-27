@@ -6,7 +6,7 @@ metadata:
 spec:
   promotionStrategyRef:
     name: infra-e
-  key: deploy
+  key: deploy-infra-e
   descriptionTemplate: >-
     {{ if eq .Phase "success" }}Deployment succeeded{{ else }}Waiting for deployment{{ end }}
   urlTemplate: ""
