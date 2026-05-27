@@ -1,7 +1,7 @@
 {
-  "drySha": "b23617c8d94a5a57ad04498ee7ba42ccfaff6fe4",
+  "drySha": "768629c03cb0f3cdcc60e150c9da8f7b9607f415",
   "repoURL": "https://github.com/patjlm/gitops-promoter-example",
   "author": "patmarti@redhat.com",
-  "date": "2026-05-27T15:34:07+02:00",
-  "subject": "app-c: bump redis to 7.4-alpine (Test 1: component isolation)"
+  "date": "2026-05-27T17:41:05+02:00",
+  "subject": "test: break app-b CI, bump app-c replicaCount"
 }
