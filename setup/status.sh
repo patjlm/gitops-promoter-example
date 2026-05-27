@@ -14,14 +14,14 @@ for ps in $(kubectl -n "$NAMESPACE" get promotionstrategy -o jsonpath='{.items[*
       (.branch | ltrimstr("environment/") | pad(14)) +
       ("dry:" + (.active.dry.sha // "-" | .[:7]) | pad(12)) +
       (if .proposed.dry.sha and .proposed.dry.sha != .active.dry.sha then "→" + (.proposed.dry.sha | .[:7]) + " " else "" end | pad(10)) +
-      ([.active.commitStatuses // [] | .[] | "\(.key)=\(.phase | icon)"] | join(" ") | pad(36)) +
-      "PR:" + (if .pullRequest.state == "merged" then "auto-merged"
+      ("PR:" + (if .pullRequest.state == "merged" then "auto-merged"
          elif .pullRequest.state == "open" then "open"
          elif .pullRequest.state == "closed" then "closed"
          elif .pullRequest.externallyMergedOrClosed then "ext-merged/closed"
          elif .pullRequest.id then "unknown"
          else "-" end) +
-      (if .pullRequest.id then " #" + .pullRequest.id else "" end)
+      (if .pullRequest.id then " #" + .pullRequest.id else "" end) | pad(28)) +
+      ([.active.commitStatuses // [] | .[] | "\(.key)=\(.phase | icon)"] | join(" "))
     ),
     ""
   '
