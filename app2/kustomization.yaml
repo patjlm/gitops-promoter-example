@@ -3,6 +3,3 @@ kind: Kustomization
 
 resources:
   - job.yaml
-
-# Increment this counter on each commit to force Job recreation
-# nameSuffix: -v1
