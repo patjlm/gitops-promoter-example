@@ -10,26 +10,76 @@ data:
     installationID: $github-installation-id
     privateKey: $github-app-private-key
 
-  # Single unified template for all apps (including all-apps)
-  # GitHub status shows: label + message (no separate description field)
-  template.github-status: |
+  # Separate templates per state to prevent flip-flopping
+  # Each template has explicit state - no conditional logic
+
+  template.github-status-pending: |
     message: |
       phase={{.app.status.operationState.phase | default "none"}} sync={{.app.status.sync.status}} health={{.app.status.health.status}}
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
       revisionPath: "{{.app.status.sync.revision}}"
       status:
-        state: "{{if or (eq .app.status.operationState.phase \"Running\") (eq .app.status.health.status \"Progressing\") (eq .app.status.health.status \"Missing\") (eq .app.status.sync.status \"OutOfSync\")}}pending{{else if and (eq .app.status.sync.status \"Synced\") (eq .app.status.health.status \"Healthy\")}}success{{else}}failure{{end}}"
+        state: "pending"
         label: "ArgoCD/{{.app.metadata.name}}"
         targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
 
-  # Single trigger for all apps
-  # Note: ArgoCD notifications has no built-in delay mechanism
-  # The oncePer deduplication + 30s reconciliation provides natural debouncing
-  trigger.on-sync-status-change: |
-    - when: app.status.operationState != nil
-      oncePer: app.status.sync.revision + "-" + app.status.operationState.phase
-      send: [github-status]
-    - when: app.status.sync.status == "Synced" && app.status.health.status == "Healthy"
-      oncePer: app.status.sync.revision
-      send: [github-status]
+  template.github-status-success: |
+    message: |
+      phase={{.app.status.operationState.phase | default "none"}} sync={{.app.status.sync.status}} health={{.app.status.health.status}}
+    github:
+      repoURLPath: "{{.app.spec.source.repoURL}}"
+      revisionPath: "{{.app.status.sync.revision}}"
+      status:
+        state: "success"
+        label: "ArgoCD/{{.app.metadata.name}}"
+        targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
+
+  template.github-status-failure: |
+    message: |
+      phase={{.app.status.operationState.phase | default "none"}} sync={{.app.status.sync.status}} health={{.app.status.health.status}}
+    github:
+      repoURLPath: "{{.app.spec.source.repoURL}}"
+      revisionPath: "{{.app.status.sync.revision}}"
+      status:
+        state: "failure"
+        label: "ArgoCD/{{.app.metadata.name}}"
+        targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
+
+  # Separate triggers per state with time-based stability checks
+  # Prevents flip-flopping and ensures reliable status for rollout gates
+
+  trigger.on-sync-pending: |
+    # Send immediately when sync starts - no delay needed for pending status
+    - when: app.status.operationState.phase in ['Running']
+          and app.status.operationState.startedAt != nil
+      oncePer: app.status.sync.revision + "-pending-" + app.status.operationState.startedAt
+      send: [github-status-pending]
+
+  trigger.on-sync-success: |
+    # Wait 30s after sync finishes to ensure stability before reporting success
+    # This prevents false positives for rollout automation gates
+    - when: app.status.operationState.phase in ['Succeeded']
+          and app.status.sync.status == 'Synced'
+          and app.status.health.status == 'Healthy'
+          and app.status.operationState.finishedAt != nil
+          and (time.Now.Unix - (time.Parse app.status.operationState.finishedAt).Unix) > 30
+      oncePer: app.status.sync.revision + "-success-" + app.status.health.lastTransitionTime
+      send: [github-status-success]
+
+  trigger.on-sync-failed: |
+    # Sync operation failure - wait 10s after operation finished
+    # Shorter delay than success for faster failure feedback
+    - when: app.status.operationState.phase in ['Failed', 'Error']
+          and app.status.operationState.finishedAt != nil
+          and (time.Now.Unix - (time.Parse app.status.operationState.finishedAt).Unix) > 10
+      oncePer: app.status.sync.revision + "-sync-failed-" + app.status.operationState.finishedAt
+      send: [github-status-failure]
+
+    # Health degradation - wait 10s after health transitioned to Degraded
+    # Catches runtime failures that occur after successful sync
+    - when: app.status.health.status == 'Degraded'
+          and app.status.health.lastTransitionTime != nil
+          and (time.Now.Unix - (time.Parse app.status.health.lastTransitionTime).Unix) > 10
+      oncePer: app.status.sync.revision + "-health-failed-" + app.status.health.lastTransitionTime
+      send: [github-status-failure]
