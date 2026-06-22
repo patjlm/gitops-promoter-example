@@ -1,0 +1,14 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: slow-job
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+      - name: sleeper
+        image: busybox:latest
+        command: ["sh", "-c", "echo 'Starting slow job'; sleep 30; echo 'Job complete'"]
+      restartPolicy: Never
+  backoffLimit: 0
