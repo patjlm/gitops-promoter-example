@@ -18,9 +18,23 @@ This repository demonstrates ArgoCD notifications using a GitHub App to set comm
 
 ## Repository Structure
 
-- `app/` — Kustomize application deploying a dummy ConfigMap
-- `argocd/` — ArgoCD Application and notifications configuration
+- `app/` — Kustomize application deploying a dummy ConfigMap (test-app)
+- `app2/` — Second Kustomize application (test-app-2, same ConfigMap with suffix)
+- `argocd/apps/` — Child Application manifests (managed by app-of-apps)
+- `argocd/app-of-apps.yaml` — Parent Application that aggregates child app status
+- `argocd/notifications-cm.yaml` — Notification templates and triggers
 - `setup/` — Local kind cluster setup scripts
+
+## App-of-Apps Pattern
+
+This repository uses the app-of-apps pattern:
+
+- **Child Apps** (`test-app`, `test-app-2`): Each sends per-app notifications
+- **Parent App** (`all-apps`): Sends aggregate notification when ALL children are synced
+
+This gives you both:
+1. Per-application status/checks (e.g., `ArgoCD/test-app`, `ArgoCD/test-app-2`)
+2. Aggregate status/check (e.g., `ArgoCD/all-apps`) that only succeeds when all apps are synced
 
 ## Quick Start
 

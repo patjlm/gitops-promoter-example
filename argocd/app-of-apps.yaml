@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: all-apps
+  namespace: argocd
+  annotations:
+    # This parent app aggregates the sync status of all child apps
+    # It will only report success when ALL children are synced
+    notifications.argoproj.io/subscribe.on-sync-succeeded.github-aggregate: ""
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/patjlm/gitops-promoter-example.git
+    targetRevision: argocd-notifications-example
+    path: argocd/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
