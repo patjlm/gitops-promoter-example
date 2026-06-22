@@ -16,6 +16,8 @@ data:
     message: |
       {{.app.metadata.name}}: sync={{.app.status.sync.status}} health={{.app.status.health.status}}
     github:
+      repoURLPath: "{{.app.spec.source.repoURL}}"
+      revisionPath: "{{.app.status.sync.revision}}"
       status:
         state: "{{if eq .app.status.operationState.phase \"Running\"}}pending{{else if and (eq .app.status.sync.status \"Synced\") (eq .app.status.health.status \"Healthy\")}}success{{else}}failure{{end}}"
         label: "ArgoCD/{{.app.metadata.name}}"
