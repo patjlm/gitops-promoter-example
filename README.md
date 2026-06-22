@@ -45,5 +45,19 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.pas
 1. Make a change to `app/configmap.yaml`
 2. Commit and push to this branch
 3. ArgoCD detects the change and syncs
-4. Notifications controller posts commit status and deployment to GitHub
+4. Notifications controller posts commit status, check run, and deployment to GitHub
 5. Verify on GitHub: commit status and deployment shows in the UI
+
+## Updating Notifications Configuration
+
+When you modify `argocd/notifications-cm.yaml`:
+
+```bash
+cd setup
+./update-notifications.sh
+```
+
+This will:
+- Apply the updated ConfigMap
+- Restart the notifications controller
+- Wait for the rollout to complete

@@ -67,21 +67,30 @@ Both will be created on sync, allowing you to compare:
 | Details | Just a link | Full markdown with multiple fields |
 | API | Older statuses API | Modern checks API |
 
-### Test 3: Different Notification Templates
+### Test 4: Different Notification Templates
 
 Modify `argocd/notifications-cm.yaml` to test different notification formats:
 
 - Commit status with different states (pending, success, failure)
+- Check run with different conclusions (success, failure, neutral, cancelled)
 - Deployment with different environments
 - Custom labels and descriptions
 
-### Test 4: Trigger Conditions
+After modifying the ConfigMap, apply changes:
+```bash
+cd setup
+./update-notifications.sh
+```
+
+### Test 5: Trigger Conditions
 
 Test different trigger conditions in `argocd/notifications-cm.yaml`:
 
 - `app.status.sync.status == 'Synced'` - On successful sync
 - `app.status.operationState.phase == 'Succeeded'` - On successful operation
 - `app.status.health.status == 'Healthy'` - On healthy app
+
+After modifying triggers, run `./update-notifications.sh` to apply changes.
 
 ## Debugging
 
