@@ -3,12 +3,12 @@ kind: ConfigMap
 metadata:
   name: argocd-cm
   namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
 data:
   # Git polling interval - check for new commits every 30 seconds
   timeout.reconciliation: "30s"
-
-  # Enable kustomize build environment variables (ARGOCD_APP_*)
-  kustomize.buildOptions: --enable-alpha-plugins
 
   # Custom health check for Application resources
   # This makes parent apps aggregate both health AND sync status of children
