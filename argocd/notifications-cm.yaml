@@ -198,33 +198,41 @@ data:
 
   # Triggers
   # Sync started - post pending status
+  # oncePer ensures notification is sent once per unique revision
   trigger.on-sync-running: |
     - when: app.status.operationState.phase in ['Running']
+      oncePer: app.status.operationState.operation.sync.revision
       send: [github-commit-status-pending, github-check-run-pending]
 
   # Sync succeeded - post success status
   trigger.on-sync-succeeded: |
     - when: app.status.sync.status == "Synced"
+      oncePer: app.status.sync.revision
       send: [github-commit-status, github-check-run, github-deployment]
 
   # Sync failed - post failure status
   trigger.on-sync-failed: |
     - when: app.status.operationState.phase in ['Error', 'Failed']
+      oncePer: app.status.operationState.operation.sync.revision
       send: [github-commit-status-failed, github-check-run-failed]
 
   # Aggregate triggers (for all-apps)
   trigger.on-sync-running-aggregate: |
     - when: app.status.operationState.phase in ['Running']
+      oncePer: app.status.operationState.operation.sync.revision
       send: [github-aggregate-status-pending, github-aggregate-check-pending]
 
   trigger.on-sync-succeeded-aggregate: |
     - when: app.status.sync.status == "Synced"
+      oncePer: app.status.sync.revision
       send: [github-aggregate-status, github-aggregate-check]
 
   trigger.on-sync-failed-aggregate: |
     - when: app.status.operationState.phase in ['Error', 'Failed']
+      oncePer: app.status.operationState.operation.sync.revision
       send: [github-aggregate-status-failed, github-aggregate-check-failed]
 
   trigger.on-deployed: |
     - when: app.status.operationState.phase == "Succeeded"
+      oncePer: app.status.operationState.operation.sync.revision
       send: [github-deployment]
