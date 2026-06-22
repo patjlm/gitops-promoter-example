@@ -51,8 +51,8 @@ else
     exit 1
 fi
 
-echo "==> Configuring ArgoCD reconciliation interval (30s for faster Git polling)"
-kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data":{"timeout.reconciliation":"30s"}}'
+echo "==> Applying ArgoCD configuration (reconciliation + app health)"
+kubectl apply -f "${SCRIPT_DIR}/../argocd/argocd-cm.yaml"
 
 echo "==> Applying ArgoCD notifications ConfigMap"
 kubectl apply -f "${SCRIPT_DIR}/../argocd/notifications-cm.yaml"
