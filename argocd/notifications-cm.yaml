@@ -207,8 +207,10 @@ data:
       # send: [github-commit-status-pending, github-check-run-pending]
 
   # Sync succeeded - post success status
+  # Only send when BOTH synced AND healthy to avoid flapping
+  # Health check adds a natural delay of a few seconds
   trigger.on-sync-succeeded: |
-    - when: app.status.sync.status == "Synced"
+    - when: app.status.sync.status == "Synced" && app.status.health.status == "Healthy"
       oncePer: app.status.sync.revision
       send: [github-commit-status]
       # Commented out for now - focusing on statuses only
@@ -231,7 +233,7 @@ data:
       # send: [github-aggregate-status-pending, github-aggregate-check-pending]
 
   trigger.on-sync-succeeded-aggregate: |
-    - when: app.status.sync.status == "Synced"
+    - when: app.status.sync.status == "Synced" && app.status.health.status == "Healthy"
       oncePer: app.status.sync.revision
       send: [github-aggregate-status]
       # Commented out for now - focusing on statuses only
