@@ -6,7 +6,7 @@ metadata:
   annotations:
     # This parent app aggregates the sync status of all child apps
     # It will only report success when ALL children are synced
-    notifications.argoproj.io/subscribe.on-sync-succeeded.github-aggregate: ""
+    notifications.argoproj.io/subscribe.on-sync-succeeded-aggregate.github: ""
 spec:
   project: default
   source:

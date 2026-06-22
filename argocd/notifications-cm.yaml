@@ -87,7 +87,7 @@ data:
     - when: app.status.sync.status == "Synced"
       send: [github-commit-status, github-check-run, github-deployment]
 
-  trigger.on-sync-succeeded.github-aggregate: |
+  trigger.on-sync-succeeded-aggregate: |
     - when: app.status.sync.status == "Synced"
       send: [github-aggregate-status, github-aggregate-check]
 
