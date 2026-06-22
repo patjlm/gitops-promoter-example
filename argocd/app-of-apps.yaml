@@ -5,10 +5,8 @@ metadata:
   namespace: argocd
   annotations:
     # This parent app aggregates the sync status of all child apps
-    # It will only report success when ALL children are synced
-    notifications.argoproj.io/subscribe.on-sync-running-aggregate.github: ""
-    notifications.argoproj.io/subscribe.on-sync-succeeded-aggregate.github: ""
-    notifications.argoproj.io/subscribe.on-sync-failed-aggregate.github: ""
+    # Uses the same template as child apps - label will be ArgoCD/all-apps
+    notifications.argoproj.io/subscribe.on-sync-status-change.github: ""
 spec:
   project: default
   source:

@@ -1,9 +1,11 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: slow-job
+  generateName: slow-job-
   namespace: default
 spec:
+  # Automatically delete job after completion
+  ttlSecondsAfterFinished: 300
   template:
     spec:
       containers:

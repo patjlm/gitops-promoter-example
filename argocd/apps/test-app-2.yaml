@@ -4,10 +4,7 @@ metadata:
   name: test-app-2
   namespace: argocd
   annotations:
-    notifications.argoproj.io/subscribe.on-sync-running.github: ""
-    notifications.argoproj.io/subscribe.on-sync-succeeded.github: ""
-    notifications.argoproj.io/subscribe.on-sync-failed.github: ""
-    notifications.argoproj.io/subscribe.on-deployed.github: ""
+    notifications.argoproj.io/subscribe.on-sync-status-change.github: ""
 spec:
   project: default
   source:
