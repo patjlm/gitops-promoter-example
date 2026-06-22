@@ -20,3 +20,4 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - Replace=true  # Delete and recreate Jobs on every sync (forces new Job run)
