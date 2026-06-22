@@ -16,7 +16,7 @@ data:
       Application {{.app.metadata.name}} sync {{.app.status.sync.status}}
     github:
       status:
-        state: "{{if eq .app.status.sync.status 'Synced'}}success{{else}}pending{{end}}"
+        state: "{{if eq .app.status.sync.status \"Synced\"}}success{{else}}pending{{end}}"
         label: "ArgoCD/sync"
         targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
 
@@ -29,7 +29,7 @@ data:
       revisionPath: "{{.app.status.sync.revision}}"
       checkRun:
         name: "ArgoCD Sync Check"
-        conclusion: "{{if eq .app.status.sync.status 'Synced'}}success{{else}}neutral{{end}}"
+        conclusion: "{{if eq .app.status.sync.status \"Synced\"}}success{{else}}neutral{{end}}"
         title: "Sync Status: {{.app.status.sync.status}}"
         summary: |
           **Application:** {{.app.metadata.name}}
@@ -44,16 +44,16 @@ data:
       Deployment of {{.app.metadata.name}} to {{.app.spec.destination.namespace}}
     github:
       deployment:
-        state: "{{if eq .app.status.sync.status 'Synced'}}success{{else}}pending{{end}}"
+        state: "{{if eq .app.status.sync.status \"Synced\"}}success{{else}}pending{{end}}"
         environment: "{{.app.spec.destination.namespace}}"
         reference: "{{.app.status.sync.revision}}"
         targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
 
   # Triggers
   trigger.on-sync-succeeded: |
-    - when: app.status.sync.status == 'Synced'
+    - when: app.status.sync.status == "Synced"
       send: [github-commit-status, github-check-run, github-deployment]
 
   trigger.on-deployed: |
-    - when: app.status.operationState.phase == 'Succeeded'
+    - when: app.status.operationState.phase == "Succeeded"
       send: [github-deployment]
