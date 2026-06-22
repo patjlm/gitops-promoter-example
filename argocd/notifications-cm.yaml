@@ -51,25 +51,30 @@ data:
 
   trigger.on-sync-pending: |
     # Send immediately when sync starts - no delay needed for pending status
-    - when: app.status.operationState.phase in ['Running'] and app.status.operationState.startedAt != nil
+    - when: app.status.operationState != nil and app.status.operationState.phase in ['Running'] and app.status.operationState.startedAt != nil
       oncePer: app.status.sync.revision + "-pending-" + app.status.operationState.startedAt
       send: [github-status-pending]
 
   trigger.on-sync-success: |
-    # Wait 30s after sync finishes to ensure stability before reporting success
-    # This prevents false positives for rollout automation gates
-    - when: app.status.operationState.phase in ['Succeeded'] and app.status.sync.status == 'Synced' and app.status.health.status == 'Healthy' and app.status.operationState.finishedAt != nil and time.Now().Sub(time.Parse(app.status.operationState.finishedAt)).Seconds() >= 30
+    # Primary: Apps with recent sync operations
+    # Wait 30s for health stability, ensuring health validates the SYNCED version
+    # Based on official ArgoCD on-deployed pattern:
+    # https://github.com/argoproj/argo-cd/blob/master/notifications_catalog/triggers/on-deployed.yaml
+    - when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded'] and app.status.sync.status == 'Synced' and app.status.health.status == 'Healthy' and app.status.health.lastTransitionTime != nil and app.status.operationState.finishedAt != nil and app.status.operationState.startedAt != nil and time.Now().Sub(time.Parse(app.status.health.lastTransitionTime)).Seconds() >= 30 and (!time.Parse(app.status.health.lastTransitionTime).Add(30 * time.Second).Before(time.Parse(app.status.operationState.finishedAt)) or time.Parse(app.status.health.lastTransitionTime).Before(time.Parse(app.status.operationState.startedAt)))
       oncePer: app.status.sync.revision + "-success-" + app.status.health.lastTransitionTime
+      send: [github-status-success]
+    # Fallback: Apps without operationState (stable apps that never needed sync)
+    # No delay needed - these apps are inherently stable (never triggered a sync operation)
+    - when: app.status.operationState == nil and app.status.sync.status == 'Synced' and app.status.health.status == 'Healthy'
+      oncePer: app.status.sync.revision
       send: [github-status-success]
 
   trigger.on-sync-failed: |
     # Sync operation failure - wait 10s after operation finished
-    # Shorter delay than success for faster failure feedback
-    - when: app.status.operationState.phase in ['Failed', 'Error'] and app.status.operationState.finishedAt != nil and time.Now().Sub(time.Parse(app.status.operationState.finishedAt)).Seconds() >= 10
+    - when: app.status.operationState != nil and app.status.operationState.phase in ['Failed', 'Error'] and app.status.operationState.finishedAt != nil and time.Now().Sub(time.Parse(app.status.operationState.finishedAt)).Seconds() >= 10
       oncePer: app.status.sync.revision + "-sync-failed-" + app.status.operationState.finishedAt
       send: [github-status-failure]
     # Health degradation - wait 10s after health transitioned to Degraded
-    # Catches runtime failures that occur after successful sync
     - when: app.status.health.status == 'Degraded' and app.status.health.lastTransitionTime != nil and time.Now().Sub(time.Parse(app.status.health.lastTransitionTime)).Seconds() >= 10
       oncePer: app.status.sync.revision + "-health-failed-" + app.status.health.lastTransitionTime
       send: [github-status-failure]
