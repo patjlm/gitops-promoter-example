@@ -12,8 +12,7 @@ spec:
     targetRevision: argocd-notifications-example
     path: app2
     kustomize:
-      commonLabels:
-        git-commit: $ARGOCD_APP_REVISION_SHORT
+      nameSuffix: -$ARGOCD_APP_REVISION_SHORT
   destination:
     server: https://kubernetes.default.svc
     namespace: default

@@ -7,14 +7,24 @@ data:
   # Git polling interval - check for new commits every 30 seconds
   timeout.reconciliation: "30s"
 
+  # Enable kustomize build environment variables (ARGOCD_APP_*)
+  kustomize.buildOptions: --enable-alpha-plugins
+
   # Custom health check for Application resources
-  # This makes parent apps wait for child Application health
-  # Without this, all-apps reports Healthy even if child apps are unhealthy
+  # This makes parent apps aggregate both health AND sync status of children
+  # Parent only reports Healthy when ALL children are Synced AND Healthy
   resource.customizations.health.argoproj.io_Application: |
     hs = {}
     hs.status = "Progressing"
     hs.message = ""
     if obj.status ~= nil then
+      -- Check sync status first
+      if obj.status.sync ~= nil and obj.status.sync.status ~= "Synced" then
+        hs.status = "Progressing"
+        hs.message = "Sync status: " .. obj.status.sync.status
+        return hs
+      end
+      -- Then check health status
       if obj.status.health ~= nil then
         hs.status = obj.status.health.status
         if obj.status.health.message ~= nil then
