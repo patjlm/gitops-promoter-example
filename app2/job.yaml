@@ -5,7 +5,7 @@ metadata:
   namespace: default
 spec:
   # Automatically delete job after completion
-  ttlSecondsAfterFinished: 300
+  ttlSecondsAfterFinished: 3600
   template:
     metadata:
       # Add hash of spec to pod name so each Job update creates new pods
