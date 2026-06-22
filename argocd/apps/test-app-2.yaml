@@ -11,6 +11,9 @@ spec:
     repoURL: https://github.com/patjlm/gitops-promoter-example.git
     targetRevision: argocd-notifications-example
     path: app2
+    kustomize:
+      commonAnnotationsEnvsubst: true
+      nameSuffix: "-${ARGOCD_APP_REVISION_SHORT}"
   destination:
     server: https://kubernetes.default.svc
     namespace: default

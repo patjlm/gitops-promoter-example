@@ -5,4 +5,4 @@ resources:
   - job.yaml
 
 # Increment this counter on each commit to force Job recreation
-nameSuffix: -v1
+# nameSuffix: -v1
