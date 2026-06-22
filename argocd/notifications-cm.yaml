@@ -19,7 +19,7 @@ data:
       repoURLPath: "{{.app.spec.source.repoURL}}"
       revisionPath: "{{.app.status.sync.revision}}"
       status:
-        state: "{{if eq .app.status.operationState.phase \"Running\"}}pending{{else if and (eq .app.status.sync.status \"Synced\") (eq .app.status.health.status \"Healthy\")}}success{{else}}failure{{end}}"
+        state: "{{if or (eq .app.status.operationState.phase \"Running\") (eq .app.status.health.status \"Progressing\") (eq .app.status.health.status \"Missing\") (eq .app.status.sync.status \"OutOfSync\")}}pending{{else if and (eq .app.status.sync.status \"Synced\") (eq .app.status.health.status \"Healthy\")}}success{{else}}failure{{end}}"
         label: "ArgoCD/{{.app.metadata.name}}"
         targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
 
