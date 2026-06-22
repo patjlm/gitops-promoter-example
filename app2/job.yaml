@@ -1,12 +1,16 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  generateName: slow-job-
+  name: slow-job
   namespace: default
 spec:
   # Automatically delete job after completion
   ttlSecondsAfterFinished: 300
   template:
+    metadata:
+      # Add hash of spec to pod name so each Job update creates new pods
+      labels:
+        job: slow-job
     spec:
       containers:
       - name: sleeper
