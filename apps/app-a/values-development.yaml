@@ -1,5 +1,0 @@
-replicaCount: 2
-
-env:
-  LOG_LEVEL: debug
-  ENVIRONMENT: development

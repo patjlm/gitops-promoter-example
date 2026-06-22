@@ -1,3 +1,0 @@
-[submodule "gitops-promoter"]
-	path = gitops-promoter
-	url = https://github.com/patjlm/gitops-promoter.git

@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+data:
+  # GitHub service configuration using GitHub App
+  service.github: |
+    appID: $github-app-id
+    installationID: $github-installation-id
+    privateKey: $github-app-private-key
+
+  # Template for commit status notification
+  template.github-commit-status: |
+    message: |
+      Application {{.app.metadata.name}} sync {{.app.status.sync.status}}
+    github:
+      status:
+        state: "{{if eq .app.status.sync.status 'Synced'}}success{{else}}pending{{end}}"
+        label: "ArgoCD"
+        targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
+
+  # Template for deployment notification
+  template.github-deployment: |
+    message: |
+      Deployment of {{.app.metadata.name}} to {{.app.spec.destination.namespace}}
+    github:
+      deployment:
+        state: "{{if eq .app.status.sync.status 'Synced'}}success{{else}}pending{{end}}"
+        environment: "{{.app.spec.destination.namespace}}"
+        reference: "{{.app.status.sync.revision}}"
+        targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
+
+  # Triggers
+  trigger.on-sync-succeeded: |
+    - when: app.status.sync.status == 'Synced'
+      send: [github-commit-status, github-deployment]
+
+  trigger.on-deployed: |
+    - when: app.status.operationState.phase == 'Succeeded'
+      send: [github-deployment]

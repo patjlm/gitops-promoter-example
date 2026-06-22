@@ -1,11 +1,15 @@
-.terraform/
-*.tfstate
-*.tfstate.backup
-.terraform.lock.hcl
-.claude/
-.idea/
-.vscode/
-.mcp.json
+# Local configuration files with secrets
 setup/config.local.env
-setup/install.yaml
-setup/.build/
+*.pem
+*.private-key.*
+
+# Editor and IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

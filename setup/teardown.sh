@@ -1,16 +1,12 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CLUSTER_NAME="argocd-test"
 
-CONFIG_FILE="${SCRIPT_DIR}/config.local.env"
-if [[ -f "$CONFIG_FILE" ]]; then
-  # shellcheck disable=SC1090
-  source "$CONFIG_FILE"
+echo "==> Deleting kind cluster: ${CLUSTER_NAME}"
+if kind get clusters | grep -q "^${CLUSTER_NAME}$"; then
+    kind delete cluster --name "${CLUSTER_NAME}"
+    echo "Cluster deleted"
+else
+    echo "Cluster ${CLUSTER_NAME} does not exist"
 fi
-
-MINIKUBE_PROFILE="${MINIKUBE_PROFILE:-promoter-example}"
-
-echo "Deleting minikube profile '$MINIKUBE_PROFILE'..."
-minikube delete -p "$MINIKUBE_PROFILE"
-echo "Done."
