@@ -13,6 +13,7 @@ data:
   # Custom health check for Application resources
   # This makes parent apps aggregate both health AND sync status of children
   # Parent only reports Healthy when ALL children are Synced AND Healthy
+  # Note: Lua health checks can't add delays; use oncePer + reconciliation for debouncing
   resource.customizations.health.argoproj.io_Application: |
     hs = {}
     hs.status = "Progressing"

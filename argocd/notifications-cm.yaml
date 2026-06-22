@@ -24,6 +24,8 @@ data:
         targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
 
   # Single trigger for all apps
+  # Note: ArgoCD notifications has no built-in delay mechanism
+  # The oncePer deduplication + 30s reconciliation provides natural debouncing
   trigger.on-sync-status-change: |
     - when: app.status.operationState != nil
       oncePer: app.status.sync.revision + "-" + app.status.operationState.phase
