@@ -1,10 +1,15 @@
 # ArgoCD Notifications Strategy
 
-This repository demonstrates two complementary approaches for reporting ArgoCD sync status to GitHub.
+This repository demonstrates ArgoCD notifications with full sync lifecycle tracking.
 
-## Approach 1: Reactive (ArgoCD Notifications Controller)
+## ArgoCD Notifications (Reactive Approach)
 
-**When it fires**: Only when an app actually syncs (manifest changes detected)
+**When it fires**: When an app sync operation starts, succeeds, or fails
+
+**Lifecycle stages**:
+1. **on-sync-running**: Posts "pending" status when sync starts
+2. **on-sync-succeeded**: Posts "success" status when sync completes
+3. **on-sync-failed**: Posts "failure" status if sync fails
 
 **Configured in**: `argocd/notifications-cm.yaml`
 
@@ -21,11 +26,13 @@ This repository demonstrates two complementary approaches for reporting ArgoCD s
 - No external dependencies
 
 **Cons**:
-- Only fires on actual sync events
-- If a commit doesn't change an app's manifests, that app won't report status
-- Can't report "no changes needed" on a commit
+- Only fires when an app syncs
+- Commits that don't affect any app manifests won't trigger notifications
+- Can't report "no changes needed"
 
-## Approach 2: Proactive (GitHub Actions Workflow)
+## Alternative: Proactive Status Reporting
+
+If you need status on EVERY commit regardless of manifest changes:
 
 **When it fires**: On EVERY commit to the branch
 
@@ -46,19 +53,13 @@ This repository demonstrates two complementary approaches for reporting ArgoCD s
 - Needs access to ArgoCD API (or cluster)
 - Less real-time than reactive notifications
 
-## Recommended Hybrid Approach
+## Current Implementation
 
-Use BOTH:
+This repository uses the **reactive ArgoCD approach only**:
 
-1. **ArgoCD Notifications** (reactive):
-   - Sends rich notifications when apps actually sync
-   - Provides deployment tracking
-   - Shows real-time sync progress
-
-2. **GitHub Actions** (proactive):
-   - Ensures every commit has a status
-   - Reports "no changes" when apps don't need to sync
-   - Provides aggregate view
+- **Per-app notifications**: Each app sends pending → success/failure as it syncs
+- **Aggregate notifications**: App-of-apps sends aggregate status for all children
+- **Full lifecycle**: GitHub shows pending while syncing, then flips to success/failure
 
 ### What You'll See on GitHub
 
