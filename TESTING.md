@@ -35,13 +35,37 @@ cp config.env config.local.env
 2. Commit and push to this branch
 3. Check GitHub for commit status:
    - Navigate to: https://github.com/patjlm/gitops-promoter-example/commits/argocd-notifications-example
-   - Verify commit status shows "ArgoCD" check
+   - Verify commit status shows "ArgoCD/sync" context
+   - Shows as a simple checkmark/X in the commit list
 
-### Test 2: Deployment Creation
+### Test 2: GitHub Check Run
+
+1. After the same sync, check GitHub Checks:
+   - Navigate to the commit on GitHub
+   - Click on the "Checks" tab
+   - Verify "ArgoCD Sync Check" appears with rich details:
+     - Summary with app name, sync status, health status, revision
+     - Title shows sync status
+     - Link to ArgoCD UI
+   - Check Runs display differently than commit statuses - they show in the Checks tab with formatted markdown content
+
+### Test 3: Deployment Creation
 
 1. After sync completes, check GitHub deployments:
    - Navigate to: https://github.com/patjlm/gitops-promoter-example/deployments
    - Verify new deployment appears for the "default" environment
+
+### Comparison: Commit Status vs Check Run
+
+Both will be created on sync, allowing you to compare:
+
+| Feature | Commit Status | Check Run |
+|---------|--------------|-----------|
+| Display | Simple label in commit list | Rich UI in Checks tab |
+| Content | State + label only | Title, summary, markdown formatting |
+| Context | `ArgoCD/sync` | `ArgoCD Sync Check` |
+| Details | Just a link | Full markdown with multiple fields |
+| API | Older statuses API | Modern checks API |
 
 ### Test 3: Different Notification Templates
 
@@ -106,9 +130,27 @@ template.github-commit-status: |
     Application {{.app.metadata.name}} sync {{.app.status.sync.status}}
   github:
     status:
-      state: "success"  # or "pending", "failure"
-      label: "ArgoCD"
+      state: "success"  # or "pending", "failure", "error"
+      label: "ArgoCD/sync"  # Shows as context in GitHub UI
       targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
+```
+
+### Check Run Template
+
+```yaml
+template.github-check-run: |
+  message: |
+    ArgoCD sync check for {{.app.metadata.name}}
+  github:
+    repoURLPath: "{{.app.spec.source.repoURL}}"
+    revisionPath: "{{.app.status.sync.revision}}"
+    checkRun:
+      name: "ArgoCD Sync Check"  # Shows as check name in Checks tab
+      conclusion: "success"  # or "failure", "neutral", "cancelled", "skipped", "timed_out", "action_required"
+      title: "Sync Status: {{.app.status.sync.status}}"
+      summary: |
+        Markdown-formatted summary with details
+      detailsURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
 ```
 
 ### Deployment Template

@@ -17,8 +17,26 @@ data:
     github:
       status:
         state: "{{if eq .app.status.sync.status 'Synced'}}success{{else}}pending{{end}}"
-        label: "ArgoCD"
+        label: "ArgoCD/sync"
         targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
+
+  # Template for GitHub Check Run (richer than commit status)
+  template.github-check-run: |
+    message: |
+      ArgoCD sync check for {{.app.metadata.name}}
+    github:
+      repoURLPath: "{{.app.spec.source.repoURL}}"
+      revisionPath: "{{.app.status.sync.revision}}"
+      checkRun:
+        name: "ArgoCD Sync Check"
+        conclusion: "{{if eq .app.status.sync.status 'Synced'}}success{{else}}neutral{{end}}"
+        title: "Sync Status: {{.app.status.sync.status}}"
+        summary: |
+          **Application:** {{.app.metadata.name}}
+          **Sync Status:** {{.app.status.sync.status}}
+          **Health Status:** {{.app.status.health.status}}
+          **Revision:** {{.app.status.sync.revision}}
+        detailsURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
 
   # Template for deployment notification
   template.github-deployment: |
@@ -34,7 +52,7 @@ data:
   # Triggers
   trigger.on-sync-succeeded: |
     - when: app.status.sync.status == 'Synced'
-      send: [github-commit-status, github-deployment]
+      send: [github-commit-status, github-check-run, github-deployment]
 
   trigger.on-deployed: |
     - when: app.status.operationState.phase == 'Succeeded'
