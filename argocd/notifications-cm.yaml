@@ -10,17 +10,54 @@ data:
     installationID: $github-installation-id
     privateKey: $github-app-private-key
 
-  # Template for commit status notification (per-app)
+  # Template for commit status notification (per-app) - PENDING
+  template.github-commit-status-pending: |
+    message: |
+      Application {{.app.metadata.name}} sync started
+    github:
+      status:
+        state: "pending"
+        label: "ArgoCD/{{.app.metadata.name}}"
+        targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
+
+  # Template for commit status notification (per-app) - SUCCESS
   template.github-commit-status: |
     message: |
       Application {{.app.metadata.name}} sync {{.app.status.sync.status}}
     github:
       status:
-        state: "{{if eq .app.status.sync.status \"Synced\"}}success{{else}}pending{{end}}"
+        state: "success"
         label: "ArgoCD/{{.app.metadata.name}}"
         targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
 
-  # Template for GitHub Check Run (per-app)
+  # Template for commit status notification (per-app) - FAILED
+  template.github-commit-status-failed: |
+    message: |
+      Application {{.app.metadata.name}} sync failed
+    github:
+      status:
+        state: "failure"
+        label: "ArgoCD/{{.app.metadata.name}}"
+        targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
+
+  # Template for GitHub Check Run (per-app) - PENDING
+  template.github-check-run-pending: |
+    message: |
+      ArgoCD sync check for {{.app.metadata.name}}
+    github:
+      repoURLPath: "{{.app.spec.source.repoURL}}"
+      revisionPath: "{{.app.status.sync.revision}}"
+      checkRun:
+        name: "ArgoCD / {{.app.metadata.name}}"
+        status: "in_progress"
+        title: "Sync in progress..."
+        summary: |
+          **Application:** {{.app.metadata.name}}
+          **Operation:** Sync started
+          **Phase:** {{.app.status.operationState.phase}}
+        detailsURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
+
+  # Template for GitHub Check Run (per-app) - SUCCESS
   template.github-check-run: |
     message: |
       ArgoCD sync check for {{.app.metadata.name}}
@@ -29,13 +66,30 @@ data:
       revisionPath: "{{.app.status.sync.revision}}"
       checkRun:
         name: "ArgoCD / {{.app.metadata.name}}"
-        conclusion: "{{if eq .app.status.sync.status \"Synced\"}}success{{else}}neutral{{end}}"
+        conclusion: "success"
         title: "Sync Status: {{.app.status.sync.status}}"
         summary: |
           **Application:** {{.app.metadata.name}}
           **Sync Status:** {{.app.status.sync.status}}
           **Health Status:** {{.app.status.health.status}}
           **Revision:** {{.app.status.sync.revision}}
+        detailsURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
+
+  # Template for GitHub Check Run (per-app) - FAILED
+  template.github-check-run-failed: |
+    message: |
+      ArgoCD sync check for {{.app.metadata.name}}
+    github:
+      repoURLPath: "{{.app.spec.source.repoURL}}"
+      revisionPath: "{{.app.status.sync.revision}}"
+      checkRun:
+        name: "ArgoCD / {{.app.metadata.name}}"
+        conclusion: "failure"
+        title: "Sync failed"
+        summary: |
+          **Application:** {{.app.metadata.name}}
+          **Phase:** {{.app.status.operationState.phase}}
+          **Message:** {{.app.status.operationState.message}}
         detailsURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
 
   # Template for deployment notification
@@ -49,18 +103,57 @@ data:
         reference: "{{.app.status.sync.revision}}"
         targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
 
-  # Template for aggregate commit status (app-of-apps pattern)
-  # This is triggered by the parent "all-apps" application
-  # which only syncs when all child apps are synced
+  # Template for aggregate commit status - PENDING
+  template.github-aggregate-status-pending: |
+    message: |
+      All ArgoCD applications sync in progress
+    github:
+      status:
+        state: "pending"
+        label: "ArgoCD/all-apps"
+        targetURL: "https://argocd.example.com/applications"
+
+  # Template for aggregate commit status - SUCCESS
   template.github-aggregate-status: |
     message: |
       All ArgoCD applications synced successfully
     github:
       status:
-        state: "{{if eq .app.status.sync.status \"Synced\"}}success{{else}}pending{{end}}"
+        state: "success"
         label: "ArgoCD/all-apps"
         targetURL: "https://argocd.example.com/applications"
 
+  # Template for aggregate commit status - FAILED
+  template.github-aggregate-status-failed: |
+    message: |
+      ArgoCD applications sync failed
+    github:
+      status:
+        state: "failure"
+        label: "ArgoCD/all-apps"
+        targetURL: "https://argocd.example.com/applications"
+
+  # Template for aggregate check - PENDING
+  template.github-aggregate-check-pending: |
+    message: |
+      Aggregate sync check for all applications
+    github:
+      repoURLPath: "{{.app.spec.source.repoURL}}"
+      revisionPath: "{{.app.status.sync.revision}}"
+      checkRun:
+        name: "ArgoCD / All Applications"
+        status: "in_progress"
+        title: "All Apps sync in progress..."
+        summary: |
+          **Aggregate Status for All Applications**
+
+          Syncing child applications...
+
+          **Parent App:** {{.app.metadata.name}}
+          **Phase:** {{.app.status.operationState.phase}}
+        detailsURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
+
+  # Template for aggregate check - SUCCESS
   template.github-aggregate-check: |
     message: |
       Aggregate sync check for all applications
@@ -69,7 +162,7 @@ data:
       revisionPath: "{{.app.status.sync.revision}}"
       checkRun:
         name: "ArgoCD / All Applications"
-        conclusion: "{{if eq .app.status.sync.status \"Synced\"}}success{{else}}neutral{{end}}"
+        conclusion: "success"
         title: "All Apps Sync Status: {{.app.status.sync.status}}"
         summary: |
           **Aggregate Status for All Applications**
@@ -82,14 +175,55 @@ data:
           **Revision:** {{.app.status.sync.revision}}
         detailsURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
 
+  # Template for aggregate check - FAILED
+  template.github-aggregate-check-failed: |
+    message: |
+      Aggregate sync check for all applications
+    github:
+      repoURLPath: "{{.app.spec.source.repoURL}}"
+      revisionPath: "{{.app.status.sync.revision}}"
+      checkRun:
+        name: "ArgoCD / All Applications"
+        conclusion: "failure"
+        title: "Apps sync failed"
+        summary: |
+          **Aggregate Status for All Applications**
+
+          One or more child applications failed to sync.
+
+          **Parent App:** {{.app.metadata.name}}
+          **Phase:** {{.app.status.operationState.phase}}
+          **Message:** {{.app.status.operationState.message}}
+        detailsURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
+
   # Triggers
+  # Sync started - post pending status
+  trigger.on-sync-running: |
+    - when: app.status.operationState.phase in ['Running']
+      send: [github-commit-status-pending, github-check-run-pending]
+
+  # Sync succeeded - post success status
   trigger.on-sync-succeeded: |
     - when: app.status.sync.status == "Synced"
       send: [github-commit-status, github-check-run, github-deployment]
 
+  # Sync failed - post failure status
+  trigger.on-sync-failed: |
+    - when: app.status.operationState.phase in ['Error', 'Failed']
+      send: [github-commit-status-failed, github-check-run-failed]
+
+  # Aggregate triggers (for all-apps)
+  trigger.on-sync-running-aggregate: |
+    - when: app.status.operationState.phase in ['Running']
+      send: [github-aggregate-status-pending, github-aggregate-check-pending]
+
   trigger.on-sync-succeeded-aggregate: |
     - when: app.status.sync.status == "Synced"
       send: [github-aggregate-status, github-aggregate-check]
+
+  trigger.on-sync-failed-aggregate: |
+    - when: app.status.operationState.phase in ['Error', 'Failed']
+      send: [github-aggregate-status-failed, github-aggregate-check-failed]
 
   trigger.on-deployed: |
     - when: app.status.operationState.phase == "Succeeded"
