@@ -14,7 +14,7 @@ data:
   # GitHub status shows: label + message (no separate description field)
   template.github-status: |
     message: |
-      phase={{.app.status.operationState.phase}} sync={{.app.status.sync.status}} health={{.app.status.health.status}}
+      phase={{if .app.status.operationState.phase}}{{.app.status.operationState.phase}}{{else}}none{{end}} sync={{.app.status.sync.status}} health={{.app.status.health.status}}
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
       revisionPath: "{{.app.status.sync.revision}}"
