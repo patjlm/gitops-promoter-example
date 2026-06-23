@@ -50,11 +50,14 @@ data:
   # Triggers - improved oncePer keys to handle oscillation
   # See Application-status.md for detailed explanation of status domains and oncePer design
 
-  trigger.on-sync-running: |
-    # Fires when sync operation starts
-    # oncePer uses sync.revision (not syncResult.revision) to match what's reported to GitHub
+  trigger.on-pending: |
+    # Fires when sync operation is running
     - when: app.status.operationState != nil and app.status.operationState.phase in ['Running']
       oncePer: app.status.sync.revision + "-" + app.status.operationState?.startedAt
+      send: [github-status-pending]
+    # Fires when health becomes Progressing
+    - when: app.status.health.status == 'Progressing'
+      oncePer: app.status.sync.revision + "-health-" + app.status.health.lastTransitionTime
       send: [github-status-pending]
 
   trigger.on-deployed: |
@@ -65,9 +68,12 @@ data:
       oncePer: app.status.sync.revision + "-" + app.status.operationState?.finishedAt
       send: [github-status-success]
 
-  trigger.on-sync-failed: |
+  trigger.on-failed: |
     # Fires when sync operation fails
-    # oncePer uses finishedAt to capture each failure (even on retries of same revision)
     - when: app.status.operationState != nil and app.status.operationState.phase in ['Error', 'Failed']
       oncePer: app.status.sync.revision + "-" + app.status.operationState?.finishedAt
+      send: [github-status-failure]
+    # Fires when health becomes Degraded
+    - when: app.status.health.status == 'Degraded'
+      oncePer: app.status.sync.revision + "-health-" + app.status.health.lastTransitionTime
       send: [github-status-failure]
