@@ -33,7 +33,12 @@ data:
         name: "CheckRun/{{.app.metadata.name}}"
         details_url: "https://argocd.example.com/applications/{{.app.metadata.name}}"
         status: in_progress
+        conclusion: neutral
         started_at: "YYYY-MM-DDTHH:MM:SSZ"
+        completed_at: "YYYY-MM-DDTHH:MM:SSZ"
+        output:
+          title: "Sync in progress"
+          summary: "Application {{.app.metadata.name}} is syncing"
 
   template.github-check-success: |
     message: |
