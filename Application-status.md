@@ -270,12 +270,24 @@ For reference, these are the 8 built-in triggers and their exact conditions. Sou
 
 ### The `on-deployed` timestamp logic explained
 
-The condition `(!time.Parse(health.lastTransitionTime).Add(1m).Before(operationState.finishedAt) OR health.lastTransitionTime.Before(operationState.startedAt))` handles two cases:
+The built-in condition `(!time.Parse(health.lastTransitionTime).Add(1m).Before(operationState.finishedAt) OR health.lastTransitionTime.Before(operationState.startedAt))` handles two cases:
 
 1. **Health became Healthy after the sync** (normal case): `health.lastTransitionTime` is within 1 minute after `finishedAt` — the 1-minute window absorbs the propagation delay between sync completion and health re-assessment.
 2. **App was already Healthy before the sync started**: `health.lastTransitionTime < operationState.startedAt` — fires immediately on sync success since health was never in question.
 
 It intentionally does NOT fire if the app transitioned to `Healthy` long after the sync completed (which would indicate health was re-established by something other than this sync).
+
+**Simplified alternative**: A simpler approach that works well in practice is to just check that health became (or already was) Healthy at or after the sync started:
+
+```yaml
+when: >
+  app.status.operationState != nil
+  and app.status.operationState.phase in ['Succeeded']
+  and app.status.health.status == 'Healthy'
+  and (time.Parse(app.status.health.lastTransitionTime) >= time.Parse(app.status.operationState.startedAt))
+```
+
+This avoids the complex nested time expressions that can cause evaluation errors in some ArgoCD versions.
 
 ---
 
@@ -315,6 +327,8 @@ Every completed sync operation has a unique `finishedAt` timestamp. Keying on it
 ```yaml
 oncePer: app.status.operationState?.syncResult?.revision + "-" + app.status.operationState?.finishedAt
 ```
+
+**Important**: Use the safe navigation operator (`?.`) in `oncePer` expressions. The ArgoCD expression evaluator will attempt to parse field accesses even when checking for nil in the `when` condition, causing errors if you use direct field access (`.`) instead of `?.`.
 
 The trigger's `when` condition already constrains which phase fires — phase does not need to be in the key. If auto-sync retries the same commit (because health degraded), the new `finishedAt` produces a new key and the trigger fires again.
 
@@ -359,6 +373,8 @@ oncePer: app.status.operationState?.syncResult?.revision + "-health-" + app.stat
 
 | Trigger type | Recommended `oncePer` | Delay reference field |
 |-------------|----------------------|----------------------|
-| Sync phase (running / succeeded / failed) | `revision + "-" + finishedAt` | `operationState.finishedAt` |
-| Health change (degraded / recovered) | `revision + "-health-" + health.lastTransitionTime` | `health.lastTransitionTime` |
+| Sync phase (running / succeeded / failed) | `operationState?.syncResult?.revision + "-" + operationState?.finishedAt` | `operationState.finishedAt` |
+| Health change (degraded / recovered) | `operationState?.syncResult?.revision + "-health-" + health.lastTransitionTime` | `health.lastTransitionTime` |
 | App created / deleted | `app.metadata.name` | n/a |
+
+**Note**: Always use the safe navigation operator (`?.`) in `oncePer` expressions to avoid null pointer errors in the ArgoCD expression evaluator. The `when` condition guards against nil values, but the evaluator may still attempt to parse field accesses in the `oncePer` expression.
