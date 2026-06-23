@@ -10,82 +10,52 @@ data:
     installationID: $github-installation-id
     privateKey: $github-app-private-key
 
-  # Test template using commit status API to verify credentials
-  template.github-status-test: |
-    message: |
-      Testing commit status API
-    github:
-      repoURLPath: "{{.app.spec.source.repoURL}}"
-      revisionPath: "{{.app.status.sync.revision}}"
-      status:
-        state: success
-        label: "Status-Test/{{.app.metadata.name}}"
-        targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
-
-  # Templates for GitHub Check Runs
-  template.github-check-pending: |
+  # Commit status templates (check runs are broken in ArgoCD v3.4.4)
+  template.github-status-pending: |
     message: |
       Sync in progress
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
       revisionPath: "{{.app.status.sync.revision}}"
-      checkRun:
-        name: "CheckRun/{{.app.metadata.name}}"
-        details_url: "https://argocd.example.com/applications/{{.app.metadata.name}}"
-        status: in_progress
-        conclusion: neutral
-        started_at: "YYYY-MM-DDTHH:MM:SSZ"
-        completed_at: "YYYY-MM-DDTHH:MM:SSZ"
-        output:
-          title: "Sync in progress"
-          summary: "Application {{.app.metadata.name}} is syncing"
+      status:
+        state: pending
+        label: "ArgoCD/{{.app.metadata.name}}"
+        targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
 
-  template.github-check-success: |
+  template.github-status-success: |
     message: |
       Application synced and healthy
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
       revisionPath: "{{.app.status.sync.revision}}"
-      checkRun:
-        name: "CheckRun/{{.app.metadata.name}}"
-        details_url: "https://argocd.example.com/applications/{{.app.metadata.name}}"
-        status: completed
-        conclusion: success
-        started_at: "YYYY-MM-DDTHH:MM:SSZ"
-        completed_at: "YYYY-MM-DDTHH:MM:SSZ"
-        output:
-          title: "Deployment successful"
-          summary: "Application {{.app.metadata.name}} is synced and healthy"
+      status:
+        state: success
+        label: "ArgoCD/{{.app.metadata.name}}"
+        targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
 
-  template.github-check-failure: |
+  template.github-status-failure: |
     message: |
       Sync failed or health degraded
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
       revisionPath: "{{.app.status.sync.revision}}"
-      checkRun:
-        name: "CheckRun/{{.app.metadata.name}}"
-        details_url: "https://argocd.example.com/applications/{{.app.metadata.name}}"
-        status: completed
-        conclusion: failure
-        started_at: "YYYY-MM-DDTHH:MM:SSZ"
-        completed_at: "YYYY-MM-DDTHH:MM:SSZ"
-        output:
-          title: "Deployment failed"
-          summary: "Application {{.app.metadata.name}} failed: phase={{.app.status.operationState.phase | default \"none\"}} health={{.app.status.health.status}}"
+      status:
+        state: failure
+        label: "ArgoCD/{{.app.metadata.name}}"
+        targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
 
   # Triggers - using official catalog names
   trigger.on-sync-running: |
     - when: app.status.operationState != nil and app.status.operationState.phase in ['Running']
       oncePer: app.status.sync.revision
-      send: [github-check-pending]
+      send: [github-status-pending]
 
   trigger.on-deployed: |
     - when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy' and (!time.Parse(app.status.health.lastTransitionTime).Add(1 * time.Minute).Before(time.Parse(app.status.operationState.finishedAt)) or time.Parse(app.status.health.lastTransitionTime).Before(time.Parse(app.status.operationState.startedAt)))
       oncePer: app.status.sync.revision
-      send: [github-check-success, github-status-test]
+      send: [github-status-success]
 
   trigger.on-sync-failed: |
     - when: app.status.operationState != nil and app.status.operationState.phase in ['Error', 'Failed']
       oncePer: app.status.sync.revision
-      send: [github-check-failure]
+      send: [github-status-failure]

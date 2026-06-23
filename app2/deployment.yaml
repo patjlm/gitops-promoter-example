@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deployment
+  labels:
+    app: test-deployment
+    revision: "{{ .Values.revision }}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-deployment
+  template:
+    metadata:
+      labels:
+        app: test-deployment
+        revision: "{{ .Values.revision }}"
+    spec:
+      containers:
+      - name: sleeper
+        image: busybox:latest
+        command: ["sleep", "infinity"]
+        readinessProbe:
+          exec:
+            command: ["true"]
+          initialDelaySeconds: 30
+          periodSeconds: 5
