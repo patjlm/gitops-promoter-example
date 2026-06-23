@@ -6,9 +6,9 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    notifications.argoproj.io/subscribe.on-sync-running.github: ""
+    notifications.argoproj.io/subscribe.on-pending.github: ""
     notifications.argoproj.io/subscribe.on-deployed.github: ""
-    notifications.argoproj.io/subscribe.on-sync-failed.github: ""
+    notifications.argoproj.io/subscribe.on-failed.github: ""
 spec:
   project: default
   source:
