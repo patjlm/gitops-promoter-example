@@ -11,14 +11,12 @@ data:
   timeout.reconciliation: "30s"
 
   # Custom health check for Application resources (from official ArgoCD docs)
-  # Enhanced to check that child apps are synced to the same revision as parent
-  # For app-of-apps pattern: parent is only Healthy when all children are Healthy
-  # AND all children are synced to the same revision as the parent
+  # Restores Application health assessment removed in v1.8
+  # Makes parent apps reflect child Application health status
   resource.customizations.health.argoproj.io_Application: |
     hs = {}
     hs.status = "Progressing"
     hs.message = ""
-
     if obj.status ~= nil then
       if obj.status.health ~= nil then
         hs.status = obj.status.health.status
@@ -26,29 +24,5 @@ data:
           hs.message = obj.status.health.message
         end
       end
-
-      -- For app-of-apps, check that all child apps are on the same revision
-      if obj.status.sync ~= nil and obj.status.sync.revision ~= nil then
-        local parent_revision = obj.status.sync.revision
-        if obj.status.resources ~= nil then
-          for i, resource in ipairs(obj.status.resources) do
-            -- Check if this is a child Application resource
-            if resource.kind == "Application" and resource.health ~= nil then
-              -- If child is not Healthy or not synced to parent's revision, mark parent as Progressing
-              if resource.health.status ~= "Healthy" then
-                hs.status = "Progressing"
-                hs.message = "Waiting for child " .. (resource.name or "unknown") .. " to become Healthy"
-                return hs
-              end
-              if resource.status ~= "Synced" then
-                hs.status = "Progressing"
-                hs.message = "Waiting for child " .. (resource.name or "unknown") .. " to sync"
-                return hs
-              end
-            end
-          end
-        end
-      end
     end
-
     return hs
