@@ -12,10 +12,10 @@ from datetime import datetime
 REPO = "patjlm/gitops-promoter-example"
 BRANCH = "argocd-notifications-example"
 
-# Track last printed state per (sha, context)
-# When HEAD changes, we drop old commits to avoid memory bloat
-last_state = {}  # (sha, context) -> (state, description)
-current_sha = None
+# Track last printed state per context
+# Maps context -> (sha, state, description)
+# This way we print whenever an app changes commit OR status
+last_state = {}  # context -> (sha, state, description)
 
 print(f"Watching commit statuses for {REPO} on {BRANCH}...", file=sys.stderr)
 
@@ -30,13 +30,6 @@ while True:
         )
         sha = result.stdout.strip()
         short_sha = sha[:7]
-
-        # If HEAD changed, drop all old commits from memory
-        if current_sha != sha:
-            if current_sha is not None:
-                # Keep only statuses for the new commit
-                last_state = {k: v for k, v in last_state.items() if k[0] == sha}
-            current_sha = sha
 
         # Get all statuses for this commit
         result = subprocess.run(
@@ -53,16 +46,16 @@ while True:
             status = json.loads(line)
             context = status['context']
             state = status['state']
-            desc = status['description']
+            desc = status['description'].strip()  # Remove trailing newlines
 
-            key = (sha, context)
-            current_state_tuple = (state, desc)
+            current_state_tuple = (sha, state, desc)
 
-            # Only print if state changed from last printed
-            if last_state.get(key) != current_state_tuple:
+            # Print if this context changed (different commit OR different state)
+            if last_state.get(context) != current_state_tuple:
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 print(f"[{timestamp}] {short_sha} | {context} | {state} | {desc}")
-                last_state[key] = current_state_tuple
+                sys.stdout.flush()  # Ensure immediate output
+                last_state[context] = current_state_tuple
 
     except subprocess.CalledProcessError:
         pass  # Ignore API errors, retry next iteration
