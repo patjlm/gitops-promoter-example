@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-deployment
+  name: test-deployment-{{ .Values.revision }}
   labels:
     app: test-deployment
     revision: "{{ .Values.revision }}"
@@ -10,6 +10,7 @@ spec:
   selector:
     matchLabels:
       app: test-deployment
+      revision: "{{ .Values.revision }}"
   template:
     metadata:
       labels:

@@ -1,0 +1,4 @@
+apiVersion: v2
+name: test-app-2
+description: Test application with revision labels
+version: 0.1.0
