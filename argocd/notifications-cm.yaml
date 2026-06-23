@@ -15,6 +15,8 @@ data:
     message: |
       Sync in progress
     github:
+      repoURLPath: "{{.app.spec.source.repoURL}}"
+      revisionPath: "{{.app.status.operationState.syncResult.revision}}"
       checkRun:
         name: "ArgoCD/{{.app.metadata.name}}"
         details_url: "https://argocd.example.com/applications/{{.app.metadata.name}}"
@@ -24,6 +26,8 @@ data:
     message: |
       Application synced and healthy
     github:
+      repoURLPath: "{{.app.spec.source.repoURL}}"
+      revisionPath: "{{.app.status.operationState.syncResult.revision}}"
       checkRun:
         name: "ArgoCD/{{.app.metadata.name}}"
         details_url: "https://argocd.example.com/applications/{{.app.metadata.name}}"
@@ -37,6 +41,8 @@ data:
     message: |
       Sync failed or health degraded
     github:
+      repoURLPath: "{{.app.spec.source.repoURL}}"
+      revisionPath: "{{.app.status.operationState.syncResult.revision}}"
       checkRun:
         name: "ArgoCD/{{.app.metadata.name}}"
         details_url: "https://argocd.example.com/applications/{{.app.metadata.name}}"
