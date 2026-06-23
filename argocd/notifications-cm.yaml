@@ -16,7 +16,7 @@ data:
       Testing commit status API
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
-      revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+      revisionPath: "{{.app.status.sync.revision}}"
       status:
         state: success
         label: "Status-Test/{{.app.metadata.name}}"
@@ -28,23 +28,26 @@ data:
       Sync in progress
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
-      revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+      revisionPath: "{{.app.status.sync.revision}}"
       checkRun:
         name: "CheckRun/{{.app.metadata.name}}"
-        detailsURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
+        details_url: "https://argocd.example.com/applications/{{.app.metadata.name}}"
         status: in_progress
+        started_at: "YYYY-MM-DDTHH:MM:SSZ"
 
   template.github-check-success: |
     message: |
       Application synced and healthy
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
-      revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+      revisionPath: "{{.app.status.sync.revision}}"
       checkRun:
         name: "CheckRun/{{.app.metadata.name}}"
-        detailsURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
+        details_url: "https://argocd.example.com/applications/{{.app.metadata.name}}"
         status: completed
         conclusion: success
+        started_at: "YYYY-MM-DDTHH:MM:SSZ"
+        completed_at: "YYYY-MM-DDTHH:MM:SSZ"
         output:
           title: "Deployment successful"
           summary: "Application {{.app.metadata.name}} is synced and healthy"
@@ -54,12 +57,14 @@ data:
       Sync failed or health degraded
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
-      revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+      revisionPath: "{{.app.status.sync.revision}}"
       checkRun:
         name: "CheckRun/{{.app.metadata.name}}"
-        detailsURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
+        details_url: "https://argocd.example.com/applications/{{.app.metadata.name}}"
         status: completed
         conclusion: failure
+        started_at: "YYYY-MM-DDTHH:MM:SSZ"
+        completed_at: "YYYY-MM-DDTHH:MM:SSZ"
         output:
           title: "Deployment failed"
           summary: "Application {{.app.metadata.name}} failed: phase={{.app.status.operationState.phase | default \"none\"}} health={{.app.status.health.status}}"
