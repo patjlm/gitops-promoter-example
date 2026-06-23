@@ -16,7 +16,7 @@ data:
   # Commit status templates (check runs are broken in ArgoCD v3.4.4)
   template.github-status-pending: |
     message: |
-      Sync in progress
+      Phase: {{.app.status.operationState.phase}} | Sync: {{.app.status.sync.status}} | Health: {{.app.status.health.status}}
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
       revisionPath: "{{.app.status.sync.revision}}"
@@ -27,7 +27,7 @@ data:
 
   template.github-status-success: |
     message: |
-      Application synced and healthy
+      Phase: {{.app.status.operationState.phase}} | Sync: {{.app.status.sync.status}} | Health: {{.app.status.health.status}}
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
       revisionPath: "{{.app.status.sync.revision}}"
@@ -38,7 +38,7 @@ data:
 
   template.github-status-failure: |
     message: |
-      Sync failed or health degraded
+      Phase: {{.app.status.operationState.phase}} | Sync: {{.app.status.sync.status}} | Health: {{.app.status.health.status}}
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
       revisionPath: "{{.app.status.sync.revision}}"
