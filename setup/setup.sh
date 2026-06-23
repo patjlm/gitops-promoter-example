@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLUSTER_NAME="argocd-test"
-ARGOCD_VERSION="v2.14.1"
+ARGOCD_VERSION="v3.4.4"
 
 # Load configuration
 if [[ -f "${SCRIPT_DIR}/config.local.env" ]]; then
