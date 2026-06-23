@@ -27,7 +27,7 @@ data:
 
   template.github-status-success: |
     message: |
-      Phase: {{.app.status.operationState.phase}} | Sync: {{.app.status.sync.status}} | Health: {{.app.status.health.status}}
+      Phase: {{.app.status.operationState.phase}} | Sync: {{.app.status.sync.status}} | Health: {{.app.status.health.status}} ({{.app.status.health.lastTransitionTime}})
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
       revisionPath: "{{.app.status.sync.revision}}"
