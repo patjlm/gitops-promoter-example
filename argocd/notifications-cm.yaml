@@ -4,6 +4,9 @@ metadata:
   name: argocd-notifications-cm
   namespace: argocd
 data:
+  # For comprehensive reference on Application status structure, timestamps,
+  # and oncePer key design, see ../Application-status.md
+
   # GitHub service configuration using GitHub App
   service.github: |
     appID: $github-app-id
@@ -44,18 +47,27 @@ data:
         label: "ArgoCD/{{.app.metadata.name}}"
         targetURL: "https://argocd.example.com/applications/{{.app.metadata.name}}"
 
-  # Triggers - using official catalog names
+  # Triggers - improved oncePer keys to handle oscillation
+  # See Application-status.md for detailed explanation of status domains and oncePer design
+
   trigger.on-sync-running: |
+    # Fires when sync operation starts
+    # oncePer uses finishedAt to capture every distinct operation (handles retries on same revision)
     - when: app.status.operationState != nil and app.status.operationState.phase in ['Running']
-      oncePer: app.status.sync.revision
+      oncePer: app.status.operationState.operation.sync.revision + "-" + app.status.operationState.startedAt
       send: [github-status-pending]
 
   trigger.on-deployed: |
+    # Fires when sync succeeds AND health is confirmed
+    # The timestamp logic ensures health became Healthy AFTER this sync started
+    # oncePer uses finishedAt to handle multiple syncs of the same revision
     - when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy' and (!time.Parse(app.status.health.lastTransitionTime).Add(1 * time.Minute).Before(time.Parse(app.status.operationState.finishedAt)) or time.Parse(app.status.health.lastTransitionTime).Before(time.Parse(app.status.operationState.startedAt)))
-      oncePer: app.status.sync.revision
+      oncePer: app.status.operationState.syncResult.revision + "-" + app.status.operationState.finishedAt
       send: [github-status-success]
 
   trigger.on-sync-failed: |
+    # Fires when sync operation fails
+    # oncePer uses finishedAt to capture each failure (even on retries of same revision)
     - when: app.status.operationState != nil and app.status.operationState.phase in ['Error', 'Failed']
-      oncePer: app.status.sync.revision
+      oncePer: app.status.operationState.syncResult.revision + "-" + app.status.operationState.finishedAt
       send: [github-status-failure]

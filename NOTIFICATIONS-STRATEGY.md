@@ -2,14 +2,21 @@
 
 This repository demonstrates ArgoCD notifications with full sync lifecycle tracking.
 
+> **Reference**: See [Application-status.md](Application-status.md) for a complete breakdown of ArgoCD's three orthogonal status domains (sync, health, operationState), all available timestamps, and derivable global states.
+
 ## ArgoCD Notifications (Reactive Approach)
 
 **When it fires**: When an app sync operation starts, succeeds, or fails
 
+**Key Status Domains** (see [Application-status.md](Application-status.md#the-three-status-domains)):
+- `status.operationState.phase`: Sync operation lifecycle (Running, Succeeded, Failed, Error)
+- `status.health.status`: Aggregated resource health (Healthy, Progressing, Degraded, etc.)
+- `status.sync.status`: Git-to-cluster comparison (Synced, OutOfSync, Unknown)
+
 **Lifecycle stages**:
-1. **on-sync-running**: Posts "pending" status when sync starts
-2. **on-sync-succeeded**: Posts "success" status when sync completes
-3. **on-sync-failed**: Posts "failure" status if sync fails
+1. **on-sync-running**: Posts "pending" status when sync starts (`operationState.phase == "Running"`)
+2. **on-deployed**: Posts "success" status when sync completes AND health is confirmed (`operationState.phase == "Succeeded"` AND `health.status == "Healthy"`)
+3. **on-sync-failed**: Posts "failure" status if sync fails (`operationState.phase in ["Failed", "Error"]`)
 
 **Configured in**: `argocd/notifications-cm.yaml`
 
@@ -123,6 +130,27 @@ Instead of GitHub Actions, you could run a service that:
 - Posts statuses for all apps to that commit
 
 This is closer to how gitops-promoter works.
+
+## Missing States in Built-in Triggers
+
+The built-in ArgoCD triggers don't cover all possible states. See [Application-status.md](Application-status.md#states-missing-from-built-in-triggers) for states like:
+
+- Sync retrying (`operationState.retryCount > 0`)
+- Sync succeeded but health degraded (common in real deployments)
+- Health recovered after degradation
+- Stuck progressing (rollout timeout)
+- Out of sync with no operation (drift detection)
+
+Custom triggers can fill these gaps using the comprehensive status information.
+
+## oncePer Key Design
+
+See [Application-status.md](Application-status.md#designing-reliable-onceper-keys) for details on:
+
+- Why `(revision, phase)` keys fail under oscillation
+- Using `finishedAt` for operation-based triggers
+- Using `health.lastTransitionTime` for health-based triggers
+- Adding stabilization delays to prevent notification bursts
 
 ## For GCP-840
 

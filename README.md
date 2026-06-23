@@ -75,3 +75,9 @@ This will:
 - Apply the updated ConfigMap
 - Restart the notifications controller
 - Wait for the rollout to complete
+
+## Documentation
+
+- **[Application-status.md](Application-status.md)** — Comprehensive reference on ArgoCD Application status structure, the three status domains (sync, health, operationState), all timestamps, global state derivations, built-in trigger analysis, and best practices for designing reliable `oncePer` keys
+- **[NOTIFICATIONS-STRATEGY.md](NOTIFICATIONS-STRATEGY.md)** — High-level comparison of reactive vs proactive notification approaches and implementation notes
+- **[TESTING.md](TESTING.md)** — Testing procedures and verification steps
