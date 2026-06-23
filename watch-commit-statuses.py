@@ -62,4 +62,4 @@ while True:
     except KeyboardInterrupt:
         break
 
-    time.sleep(5)
+    time.sleep(3)
