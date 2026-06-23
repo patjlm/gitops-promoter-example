@@ -6,8 +6,8 @@ metadata:
   annotations:
     # This parent app aggregates the sync status of all child apps
     # Subscribe to all state triggers for complete lifecycle visibility
-    notifications.argoproj.io/subscribe.on-sync-pending.github: ""
-    notifications.argoproj.io/subscribe.on-sync-success.github: ""
+    notifications.argoproj.io/subscribe.on-sync-running.github: ""
+    notifications.argoproj.io/subscribe.on-deployed.github: ""
     notifications.argoproj.io/subscribe.on-sync-failed.github: ""
 spec:
   project: default
