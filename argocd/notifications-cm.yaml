@@ -63,8 +63,9 @@ data:
   trigger.on-deployed: |
     # Fires when sync succeeds AND health is confirmed
     # The timestamp logic ensures health became Healthy AFTER this sync started
-    # Adds 60s stabilization delay (2x reconciliation period of 30s from argocd-cm)
+    # Adds 60s stabilization delay (reconciliation period 30s + 30s buffer from argocd-cm)
     # Uses health.lastTransitionTime since that's what updates when child apps sync
+    # Formula: delay = timeout.reconciliation + 30s
     # This gives child apps time to auto-sync before parent reports success
     # oncePer uses sync.revision (not syncResult.revision) to match what's reported to GitHub
     - when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy' and (time.Parse(app.status.health.lastTransitionTime) >= time.Parse(app.status.operationState.startedAt)) and (time.Now().Sub(time.Parse(app.status.health.lastTransitionTime)).Seconds() >= 60)

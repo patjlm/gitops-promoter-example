@@ -32,12 +32,17 @@ This guide solves all these issues.
 ### 1.1 Reconciliation Period
 
 ```yaml
-timeout.reconciliation: "30s"
+timeout.reconciliation: "30s"  # Example: fast feedback for dev/test
+# Default if not set: 180s (3 minutes)
 ```
 
 **Purpose**: Sets how often ArgoCD checks for changes  
-**Critical**: Stabilization delay must be 2× this value  
-**Effect**: Faster reconciliation = quicker detection of changes
+**Critical**: Stabilization delay = `this value + 30s`  
+**Effect**: Faster reconciliation = quicker detection of changes, but more load on API server  
+**Recommendation**: 
+- Dev/test environments: 30s (60s delay)
+- Production: Review current default (180s → 210s delay) and tune based on needs
+- Consider 60s or 90s as middle ground (90s or 120s delay)
 
 ### 1.2 Custom Health Check for Applications
 
@@ -100,19 +105,27 @@ trigger.on-deployed: |
     send: [github-status-success]
 ```
 
-**60s stabilization delay**: 2× reconciliation period (30s × 2)  
+**Stabilization delay**: `reconciliation period + 30s`  
 **Why needed**: Gives children time to auto-sync after parent syncs  
 **Measured from**: `health.lastTransitionTime` (updates when children change and affect parent health)  
 **Critical**: Without this delay, parent reports success immediately after its own sync, before children catch up
 
-**Timing flow**:
+**Formula breakdown**:
+- **reconciliation period**: Time for children to detect their sources changed
+- **+30s buffer**: Time for children to sync and health to stabilize (typically <30s for most apps)
+
+**Examples**:
+- `timeout.reconciliation: 30s` → delay = **60s** (fast feedback, good for dev/test)
+- `timeout.reconciliation: 180s` (default) → delay = **210s** (production default)
+
+**Timing flow** (example with 30s reconciliation):
 ```
 Parent sync finishes (t=0) → 
 Children detect change (t=0-30s) → 
-Children sync (t=30s) → 
+Children sync (t=30-45s) → 
 Children become healthy (t=45s) → 
 Parent health updates to Healthy (t=45s) → 
-60s delay from t=45s → 
+60s delay from t=45s (30s reconciliation + 30s buffer) → 
 Notification fires (t=105s)
 ```
 
@@ -351,13 +364,22 @@ ArgoCD Application status has three **orthogonal** dimensions that update indepe
 ### 8.1 Reconciliation Period → Stabilization Delay
 
 ```
-reconciliation period = 30s
-stabilization delay = 60s (2× reconciliation period)
+reconciliation period = 30s (example)
+stabilization delay = 60s (reconciliation period + 30s buffer)
 ```
 
-**Why 2×**: Ensures at least 2 reconciliation cycles pass before notification  
-**Effect**: Children have time to auto-sync and report health  
-**Formula**: `delay = 2 × timeout.reconciliation`
+**Formula**: `delay = timeout.reconciliation + 30s`
+
+**Why this formula**:
+- **reconciliation period**: Maximum time for children to detect their sources changed
+- **+30s buffer**: Covers sync operation and health check time (typically <30s)
+
+**Effect**: Children have time to auto-sync and report health before parent reports status
+
+**Examples**:
+- 30s reconciliation → 60s delay (fast, good for dev)
+- 180s reconciliation → 210s delay (default production)
+- 60s reconciliation → 90s delay (middle ground)
 
 ### 8.2 Complete Event Timeline
 
@@ -431,11 +453,11 @@ t=110s  60s delay from health transition (t=50s + 60s)
 ## 11. Verification Checklist
 
 ### Configuration Files
-- [ ] `timeout.reconciliation: "30s"` set in argocd-cm
+- [ ] `timeout.reconciliation` reviewed and set in argocd-cm (default: 180s)
 - [ ] Custom health check for Applications in argocd-cm
 - [ ] Three triggers defined (on-pending, on-deployed, on-failed)
 - [ ] Each trigger has multiple `when` conditions
-- [ ] on-deployed has 60s delay (2× reconciliation period)
+- [ ] on-deployed delay = `timeout.reconciliation + 30s` (e.g., 60s for 30s reconciliation)
 
 ### oncePer Keys
 - [ ] All oncePer keys use `sync.revision` not `syncResult.revision`
@@ -466,11 +488,11 @@ t=110s  60s delay from health transition (t=50s + 60s)
 | Using `syncResult.revision` in oncePer | Won't fire for commits without manifest changes | Use `sync.revision` |
 | No timestamp in oncePer | Duplicate syncs of same revision silently dropped | Add `finishedAt` or `lastTransitionTime` |
 | Using `.` instead of `?.` | Null pointer errors in expression evaluator | Use safe navigation `?.` |
-| No stabilization delay | Parent reports success before children sync (if needed) | Add 60s delay (2× reconciliation period) |
+| No stabilization delay | Parent reports success before children sync (if needed) | Add delay = `reconciliation period + 30s` |
 | Delay from wrong timestamp | Missing health state changes | Use `lastTransitionTime` not `finishedAt` |
-| Delay too short | Children don't have time to sync and report health | Use 2× reconciliation period (60s for 30s reconciliation) |
+| Delay too short | Children don't have time to sync and report health | Use `reconciliation period + 30s` (e.g., 60s for 30s reconciliation) |
 | Missing health check | Parent health doesn't reflect children | Add custom health script to argocd-cm |
-| Wrong reconciliation period | Inconsistent timing, delay doesn't match | Set to 30s, delay to 60s |
+| Wrong reconciliation period | Inconsistent timing, delay doesn't match | Review and tune based on needs (default 180s) |
 | Trigger name mismatch | Apps don't receive notifications | Match annotation names to trigger names exactly |
 
 ---
