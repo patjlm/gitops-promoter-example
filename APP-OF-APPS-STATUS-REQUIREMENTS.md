@@ -101,13 +101,14 @@ trigger.on-pending: |
 ```yaml
 trigger.on-deployed: |
   - when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy' and (time.Parse(app.status.health.lastTransitionTime) >= time.Parse(app.status.operationState.startedAt)) and (time.Now().Sub(time.Parse(app.status.health.lastTransitionTime)).Seconds() >= 60)
-    oncePer: app.status.sync.revision + "-" + app.status.operationState?.finishedAt
+    oncePer: app.status.sync.revision + "-" + app.status.operationState?.finishedAt + "-" + app.status.health.lastTransitionTime
     send: [github-status-success]
 ```
 
 **Stabilization delay**: `reconciliation period + 30s`  
 **Why needed**: Gives children time to auto-sync after parent syncs  
 **Measured from**: `health.lastTransitionTime` (updates when children change and affect parent health)  
+**oncePer includes both finishedAt and health.lastTransitionTime**: Handles health oscillation after sync (Healthy → Progressing → Healthy)  
 **Critical**: Without this delay, parent reports success immediately after its own sync, before children catch up
 
 **Formula breakdown**:
@@ -190,10 +191,13 @@ oncePer: app.status.operationState.syncResult.revision + "-" + ...  # WRONG
 ### 3.2 Include Timestamps to Handle Oscillation
 
 ```yaml
-# For operation-based triggers:
+# For sync succeeded with health confirmed:
+oncePer: app.status.sync.revision + "-" + app.status.operationState?.finishedAt + "-" + app.status.health.lastTransitionTime
+
+# For sync failed:
 oncePer: app.status.sync.revision + "-" + app.status.operationState?.finishedAt
 
-# For health-based triggers:
+# For health-based triggers (without sync):
 oncePer: app.status.sync.revision + "-health-" + app.status.health.lastTransitionTime
 ```
 
@@ -201,10 +205,16 @@ oncePer: app.status.sync.revision + "-health-" + app.status.health.lastTransitio
 **Without timestamp**: Second sync of same revision is silently dropped  
 **With timestamp**: Each distinct operation/health change fires a notification
 
+**For on-deployed, include both timestamps**: 
+- `finishedAt`: Ties to the specific sync operation
+- `health.lastTransitionTime`: Captures each health transition after sync
+
+This handles the case where health oscillates after a sync completes (Healthy → Progressing → Healthy with the same finishedAt).
+
 **Example**: 
-- Revision `abc123` syncs successfully at 10:00 → finishedAt=10:00 → notification sent
-- Health degrades, auto-sync retries `abc123` at 10:05 → finishedAt=10:05 → **new notification sent**
-- Without finishedAt in key, the retry would be silently dropped
+- Revision `abc123` syncs successfully at 10:00 → finishedAt=10:00, health transition=10:02 → notification sent
+- Health degrades at 10:05, then recovers at 10:10 → new health transition=10:10 → **new notification sent** (same finishedAt, different health transition)
+- Without health.lastTransitionTime in key, the health recovery would be silently dropped
 
 ### 3.3 Use Safe Navigation Operator (`?.`)
 

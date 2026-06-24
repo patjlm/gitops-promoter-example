@@ -68,8 +68,9 @@ data:
     # Formula: delay = timeout.reconciliation + 30s
     # This gives child apps time to auto-sync before parent reports success
     # oncePer uses sync.revision (not syncResult.revision) to match what's reported to GitHub
+    # oncePer includes both finishedAt and health.lastTransitionTime to handle health oscillation
     - when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy' and (time.Parse(app.status.health.lastTransitionTime) >= time.Parse(app.status.operationState.startedAt)) and (time.Now().Sub(time.Parse(app.status.health.lastTransitionTime)).Seconds() >= 60)
-      oncePer: app.status.sync.revision + "-" + app.status.operationState?.finishedAt
+      oncePer: app.status.sync.revision + "-" + app.status.operationState?.finishedAt + "-" + app.status.health.lastTransitionTime
       send: [github-status-success]
 
   trigger.on-failed: |

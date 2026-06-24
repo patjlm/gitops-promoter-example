@@ -332,6 +332,16 @@ oncePer: app.status.operationState?.syncResult?.revision + "-" + app.status.oper
 
 The trigger's `when` condition already constrains which phase fires — phase does not need to be in the key. If auto-sync retries the same commit (because health degraded), the new `finishedAt` produces a new key and the trigger fires again.
 
+### Combining `finishedAt` with `health.lastTransitionTime`
+
+When health oscillates after a sync completes (Healthy → Progressing → Healthy with the same `finishedAt`), including `health.lastTransitionTime` in the key ensures each health transition generates a new notification:
+
+```yaml
+oncePer: app.status.operationState?.syncResult?.revision + "-" + app.status.operationState?.finishedAt + "-" + app.status.health.lastTransitionTime
+```
+
+This is critical for app-of-apps patterns where parent health may transition multiple times after a successful sync as child apps reconcile.
+
 ### Adding a stabilization delay
 
 ArgoCD evaluates trigger conditions on every reconciliation cycle (every few seconds). Without a delay, a status that flips quickly (Running → Succeeded → health Degraded → re-sync) can generate a burst of notifications before settling. A time guard in the `when` condition approximates a debounce:
@@ -373,8 +383,10 @@ oncePer: app.status.operationState?.syncResult?.revision + "-health-" + app.stat
 
 | Trigger type | Recommended `oncePer` | Delay reference field |
 |-------------|----------------------|----------------------|
-| Sync phase (running / succeeded / failed) | `operationState?.syncResult?.revision + "-" + operationState?.finishedAt` | `operationState.finishedAt` |
-| Health change (degraded / recovered) | `operationState?.syncResult?.revision + "-health-" + health.lastTransitionTime` | `health.lastTransitionTime` |
+| Sync phase running / pending | `sync.revision + "-" + operationState?.startedAt` | `operationState.startedAt` |
+| Sync succeeded with health confirmed | `sync.revision + "-" + operationState?.finishedAt + "-" + health.lastTransitionTime` | `health.lastTransitionTime` |
+| Sync failed | `sync.revision + "-" + operationState?.finishedAt` | `operationState.finishedAt` |
+| Health change (degraded / progressing) | `sync.revision + "-health-" + health.lastTransitionTime` | `health.lastTransitionTime` |
 | App created / deleted | `app.metadata.name` | n/a |
 
 **Note**: Always use the safe navigation operator (`?.`) in `oncePer` expressions to avoid null pointer errors in the ArgoCD expression evaluator. The `when` condition guards against nil values, but the evaluator may still attempt to parse field accesses in the `oncePer` expression.
